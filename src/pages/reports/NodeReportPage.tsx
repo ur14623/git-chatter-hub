@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, TrendingUp, TrendingDown, Activity, Cpu, HardDrive, Clock, Server, CheckCircle, AlertTriangle, Filter, Calendar, Download, Shield, Database } from "lucide-react";
+
 
 export function NodeReportPage() {
   const summaryMetrics = {
@@ -114,68 +114,40 @@ export function NodeReportPage() {
     }
   };
 
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-success" />;
-      case 'down': return <TrendingDown className="h-4 w-4 text-destructive" />;
-      case 'stable': return <Activity className="h-4 w-4 text-muted-foreground" />;
-      default: return <Activity className="h-4 w-4" />;
-    }
-  };
 
   return (
     <main className="min-h-screen bg-background p-8 space-y-8">
       {/* Professional Summary Metrics - Reduced to 4 key cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="metric-card hover-scale animate-fade-in">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10">
-              <Server className="h-6 w-6 text-primary" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Nodes</p>
-              <p className="text-2xl font-bold text-foreground">{summaryMetrics.totalNodes}</p>
-              <p className="text-xs text-muted-foreground">{summaryMetrics.activeNodes} Active</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Nodes</p>
+            <p className="text-2xl font-bold text-foreground">{summaryMetrics.totalNodes}</p>
+            <p className="text-xs text-muted-foreground">{summaryMetrics.activeNodes} Active</p>
           </div>
         </div>
 
         <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-success/10">
-              <CheckCircle className="h-6 w-6 text-success" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Health Status</p>
-              <p className="text-2xl font-bold text-success">{summaryMetrics.optimalNodes}</p>
-              <p className="text-xs text-muted-foreground">{summaryMetrics.warningNodes} Warning</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Health Status</p>
+            <p className="text-2xl font-bold text-success">{summaryMetrics.optimalNodes}</p>
+            <p className="text-xs text-muted-foreground">{summaryMetrics.warningNodes} Warning</p>
           </div>
         </div>
 
         <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-info/10">
-              <BarChart3 className="h-6 w-6 text-info" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Executions</p>
-              <p className="text-2xl font-bold text-foreground">{summaryMetrics.totalExecutions.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Operations</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Executions</p>
+            <p className="text-2xl font-bold text-foreground">{summaryMetrics.totalExecutions.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">Operations</p>
           </div>
         </div>
 
         <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-muted/10">
-              <Cpu className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resource Usage</p>
-              <p className="text-2xl font-bold text-foreground">{summaryMetrics.avgCpuUsage}</p>
-              <p className="text-xs text-muted-foreground">{summaryMetrics.avgMemoryUsage} Memory</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resource Usage</p>
+            <p className="text-2xl font-bold text-foreground">{summaryMetrics.avgCpuUsage}</p>
+            <p className="text-xs text-muted-foreground">{summaryMetrics.avgMemoryUsage} Memory</p>
           </div>
         </div>
       </div>
@@ -214,14 +186,9 @@ export function NodeReportPage() {
       {/* Professional Node Table */}
       <div className="professional-card overflow-hidden animate-scale-in">
         <div className="p-8 border-b border-border/40">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10">
-              <Database className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Node Performance Analytics</h2>
-              <p className="text-muted-foreground">Comprehensive resource utilization and execution statistics</p>
-            </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Node Performance Analytics</h2>
+            <p className="text-muted-foreground">Comprehensive resource utilization and execution statistics</p>
           </div>
         </div>
         <Table>
@@ -269,7 +236,7 @@ export function NodeReportPage() {
                   </div>
                 </TableCell>
                 <TableCell className="py-4 font-medium">{report.uptime}</TableCell>
-                <TableCell className="py-4">{getTrendIcon(report.trend)}</TableCell>
+                <TableCell className="py-4 font-medium">{report.trend}</TableCell>
               </TableRow>
             ))}
           </TableBody>

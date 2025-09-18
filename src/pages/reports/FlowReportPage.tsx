@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, TrendingUp, TrendingDown, Activity, BarChart3, Clock, CheckCircle, XCircle, Filter, Calendar, Download, Shield, LineChart } from "lucide-react";
+
 
 export function FlowReportPage() {
   const summaryMetrics = {
@@ -120,68 +120,40 @@ export function FlowReportPage() {
     }
   };
 
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-success" />;
-      case 'down': return <TrendingDown className="h-4 w-4 text-destructive" />;
-      case 'stable': return <Activity className="h-4 w-4 text-muted-foreground" />;
-      default: return <Activity className="h-4 w-4" />;
-    }
-  };
 
   return (
     <main className="min-h-screen bg-background p-8 space-y-8">
       {/* Professional Summary Metrics - Reduced to 4 key cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="metric-card hover-scale animate-fade-in">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-primary/10">
-              <Activity className="h-7 w-7 text-primary" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Flows</p>
-              <p className="text-3xl font-bold text-foreground">{summaryMetrics.activeFlows}</p>
-              <p className="text-xs text-muted-foreground">of {summaryMetrics.totalFlows} Total</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Flows</p>
+            <p className="text-3xl font-bold text-foreground">{summaryMetrics.activeFlows}</p>
+            <p className="text-xs text-muted-foreground">of {summaryMetrics.totalFlows} Total</p>
           </div>
         </div>
 
         <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-success/10">
-              <BarChart3 className="h-7 w-7 text-success" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Success Rate</p>
-              <p className="text-3xl font-bold text-success">{summaryMetrics.avgSuccessRate}%</p>
-              <p className="text-xs text-muted-foreground">Avg Performance</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Success Rate</p>
+            <p className="text-3xl font-bold text-success">{summaryMetrics.avgSuccessRate}%</p>
+            <p className="text-xs text-muted-foreground">Avg Performance</p>
           </div>
         </div>
 
         <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-info/10">
-              <TrendingUp className="h-7 w-7 text-info" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Executions</p>
-              <p className="text-3xl font-bold text-foreground">{summaryMetrics.totalExecutions.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Total Processed</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Executions</p>
+            <p className="text-3xl font-bold text-foreground">{summaryMetrics.totalExecutions.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">Total Processed</p>
           </div>
         </div>
 
         <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-muted/10">
-              <FileText className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data Volume</p>
-              <p className="text-3xl font-bold text-foreground">{summaryMetrics.totalDataProcessed}</p>
-              <p className="text-xs text-muted-foreground">{summaryMetrics.avgExecutionTime} Avg Time</p>
-            </div>
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data Volume</p>
+            <p className="text-3xl font-bold text-foreground">{summaryMetrics.totalDataProcessed}</p>
+            <p className="text-xs text-muted-foreground">{summaryMetrics.avgExecutionTime} Avg Time</p>
           </div>
         </div>
       </div>
@@ -202,7 +174,6 @@ export function FlowReportPage() {
               </SelectContent>
             </Select>
             <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
               <Input 
                 type="date" 
                 className="w-auto h-12 bg-background/80 border-border/60 transition-all duration-200" 
@@ -217,11 +188,9 @@ export function FlowReportPage() {
           </div>
           <div className="flex items-center gap-4">
             <Button variant="outline" size="lg" className="h-12 px-6 border-border/60 hover:border-primary/40">
-              <Download className="h-5 w-5 mr-2" />
               Export Data
             </Button>
             <Button size="lg" className="h-12 px-6 bg-gradient-to-r from-primary to-primary/90">
-              <Filter className="h-5 w-5 mr-2" />
               Advanced Filters
             </Button>
           </div>
@@ -231,14 +200,9 @@ export function FlowReportPage() {
       {/* Professional Data Table */}
       <div className="professional-card overflow-hidden animate-scale-in">
         <div className="p-8 border-b border-border/40">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10">
-              <BarChart3 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Flow Performance Analytics</h2>
-              <p className="text-muted-foreground">Comprehensive execution metrics and performance insights</p>
-            </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Flow Performance Analytics</h2>
+            <p className="text-muted-foreground">Comprehensive execution metrics and performance insights</p>
           </div>
         </div>
         <div className="p-0">
@@ -289,7 +253,7 @@ export function FlowReportPage() {
                   <TableCell className="py-4 font-mono text-sm font-medium">{report.dataProcessed}</TableCell>
                   <TableCell className="py-4 font-medium">{report.peakHour}</TableCell>
                   <TableCell className="py-4 text-sm text-muted-foreground">{report.lastExecution}</TableCell>
-                  <TableCell className="py-4">{getTrendIcon(report.trend)}</TableCell>
+                  <TableCell className="py-4 font-medium">{report.trend}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -299,14 +263,9 @@ export function FlowReportPage() {
 
       {/* Professional Error Analysis */}
       <div className="professional-card p-8 animate-fade-in">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-warning/10">
-            <Activity className="h-6 w-6 text-warning" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Error Analysis & Insights</h2>
-            <p className="text-muted-foreground">Comprehensive error tracking and resolution patterns</p>
-          </div>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-foreground">Error Analysis & Insights</h2>
+          <p className="text-muted-foreground">Comprehensive error tracking and resolution patterns</p>
         </div>
         <div className="grid gap-6">
           {reports.map((report, index) => (
