@@ -161,7 +161,7 @@ export function StreamsPage() {
   const totalWarnings = filteredStreams.reduce((sum, s) => sum + s.warnings, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-5">
         <Card className="professional-card">
