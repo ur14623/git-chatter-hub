@@ -162,33 +162,6 @@ export function StreamsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card className="professional-card">
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                Streams Overview
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Centralized view of all mediation streams across the platform
-              </p>
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="h-9"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-5">
         <Card className="professional-card">
