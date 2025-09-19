@@ -572,24 +572,7 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 font-medium">
                   Editing Mode
                 </Badge>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                  Auto-save enabled
-                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Network className="h-4 w-4" />
-                <span>{nodes.length} nodes</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <GitFork className="h-4 w-4" />
-                <span>{edges.length} connections</span>
-              </div>
-              <div className="w-px h-4 bg-border"></div>
-              <span>Last saved: {new Date().toLocaleTimeString()}</span>
             </div>
           </div>
         </div>
