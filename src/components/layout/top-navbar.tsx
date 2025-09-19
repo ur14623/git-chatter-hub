@@ -1,4 +1,3 @@
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,11 +5,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sun, Moon, ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 export function TopNavbar() {
-  const { theme, setTheme } = useTheme();
   const location = useLocation();
 
   // Mock username - in real app this would come from auth context
@@ -61,20 +59,8 @@ export function TopNavbar() {
           ))}
         </div>
 
-        {/* Right side - Theme toggle and User menu */}
+        {/* Right side - User menu */}
         <div className="flex items-center space-x-4">
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="text-success-foreground hover:bg-success-foreground/10"
-          >
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
