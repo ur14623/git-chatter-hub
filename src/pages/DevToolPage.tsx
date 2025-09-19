@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCcw,
-  ExternalLink
+  ExternalLink,
+  GitCommit
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +36,6 @@ import { CloneFlowDialog } from "@/pages/flows/clone-flow-dialog";
 import { useSubnodes, subnodeService } from "@/services/subnodeService";
 import { parameterService } from "@/services/parameterService";
 import { LoadingCard } from "@/components/ui/loading";
-import { useSection } from "@/contexts/SectionContext";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import axios from "axios";
 import { gitService, type GitInfo } from "@/services/gitService";
@@ -43,13 +43,6 @@ import { gitService, type GitInfo } from "@/services/gitService";
 export function DevToolPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setCurrentSection, setStatusCounts } = useSection();
-
-  // Set section context for DevTool page
-  useEffect(() => {
-    setCurrentSection("Development Tools");
-    setStatusCounts({ total: 0, deployed: 0, drafted: 0 }); // Hide status counts
-  }, [setCurrentSection, setStatusCounts]);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState<{[key: string]: number}>({
@@ -126,6 +119,30 @@ export function DevToolPage() {
     return (
       <div className="flex items-center justify-between px-2 py-4 border-t border-border bg-muted/20">
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Items per page:</span>
+            <Select 
+              value={itemsPerPageValue.toString()} 
+              onValueChange={(value) => handleItemsPerPageChange(category, parseInt(value))}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+                <SelectItem value="40">40</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Showing {(current - 1) * itemsPerPageValue + 1} to {Math.min(current * itemsPerPageValue, totalItems)} of {totalItems} entries
+          </div>
         </div>
         
         {totalPages > 1 && (
@@ -247,9 +264,7 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={flow.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isDeployed ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
                       <div>
@@ -259,10 +274,10 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          runningStatus === 'Running' ? 'bg-success text-success-foreground' :
-                          runningStatus === 'Partial' ? 'bg-warning text-warning-foreground' :
-                          'bg-destructive text-destructive-foreground'
+                        className={`text-xs font-medium ${
+                          runningStatus === 'Running' ? 'bg-green-500 text-white border-green-500' :
+                          runningStatus === 'Partial' ? 'bg-yellow-500 text-white border-yellow-500' :
+                          'bg-red-500 text-white border-red-500'
                         }`}
                       >
                         {runningStatus}
@@ -271,8 +286,8 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isDeployed ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isDeployed ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isDeployed ? "Deployed" : "Draft"}
@@ -296,34 +311,34 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/flows/${flow.id}`)}
                         >
-                          View
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportFlow(flow)}
                         >
-                          Export
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => handleCloneFlow(flow)}
                         >
-                          Clone
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteFlow(flow.id)}
                         >
-                          Delete
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -386,9 +401,7 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={node.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isDeployed ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
                       <div>
@@ -398,8 +411,8 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isDeployed ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isDeployed ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isDeployed ? "Deployed" : "Draft"}
@@ -429,33 +442,33 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/nodes/${node.id}`)}
                         >
-                          View
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportNode(node)}
                         >
-                          Export
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3"
+                          className="h-8 px-2"
                         >
-                          Clone
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteNode(node.id)}
                         >
-                          Delete
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -513,9 +526,7 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={subnode.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isActive && !isDraft ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
                       <div>
@@ -525,8 +536,8 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isActive && !isDraft ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isActive && !isDraft ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isActive && !isDraft ? "Active" : "Draft"}
@@ -550,33 +561,33 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/subnodes/${subnode.id}`)}
                         >
-                          View
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportSubnode(subnode)}
                         >
-                          Export
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3"
+                          className="h-8 px-2"
                         >
-                          Clone
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteSubnode(subnode.id)}
                         >
-                          Delete
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -634,9 +645,7 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={param.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isActive && !isDraft ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
                       <div>
@@ -653,8 +662,8 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isActive && !isDraft ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isActive && !isDraft ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isActive && !isDraft ? "Active" : "Draft"}
@@ -675,33 +684,33 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/parameters/${param.id}`)}
                         >
-                          View
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportParameter(param.id)}
                         >
-                          Export
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3"
+                          className="h-8 px-2"
                         >
-                          Clone
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-3 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteParameter(param.id)}
                         >
-                          Delete
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -919,6 +928,7 @@ export function DevToolPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="w-full p-6 space-y-8">
+
 
         {/* Professional Tabs */}
         <div className="bg-card border border-border rounded-lg shadow-sm">
