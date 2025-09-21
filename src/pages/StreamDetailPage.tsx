@@ -186,6 +186,12 @@ export function StreamDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Flow Name */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">Flow Name</Label>
+              <div className="text-lg font-semibold text-foreground">{streamData.name}</div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Status */}
               <div className="space-y-2">
@@ -277,16 +283,9 @@ export function StreamDetailPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Network className="h-5 w-5" />
-                Flow Pipeline
+                Flow Pipeline (Read-only)
               </CardTitle>
             <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => navigate(`/flows/${streamId?.replace('stream-', '')}/edit`)}
-                  className="gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit Stream
-                </Button>
                 <Button
                   variant={viewMode === "graph" ? "default" : "outline"}
                   size="sm"

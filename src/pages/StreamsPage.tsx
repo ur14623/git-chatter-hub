@@ -12,18 +12,12 @@ import {
   Search, 
   Filter, 
   Download, 
-  Play, 
-  Square, 
   AlertTriangle,
   Activity,
   Zap,
   Database,
   TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Settings,
-  Eye,
-  MoreHorizontal
+  TrendingDown
 } from "lucide-react";
 import {
   Pagination,
@@ -33,12 +27,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Mock data combining all streams from different mediation types
 const allStreams = [
@@ -51,7 +39,8 @@ const allStreams = [
     throughput: "2.8K/sec",
     errors: 156,
     warnings: 23,
-    mediationType: "Charging Gateway"
+    mediationType: "Charging Gateway",
+    lastUpdated: "2024-01-20T14:30:00Z"
   },
   {
     id: "charging-002", 
@@ -62,7 +51,8 @@ const allStreams = [
     throughput: "1.9K/sec",
     errors: 8,
     warnings: 45,
-    mediationType: "Charging Gateway"
+    mediationType: "Charging Gateway",
+    lastUpdated: "2024-01-20T13:45:00Z"
   },
   {
     id: "charging-003",
@@ -73,7 +63,8 @@ const allStreams = [
     throughput: "0/sec",
     errors: 0,
     warnings: 2,
-    mediationType: "Charging Gateway"
+    mediationType: "Charging Gateway",
+    lastUpdated: "2024-01-20T12:15:00Z"
   },
   {
     id: "convergent-001",
@@ -84,7 +75,8 @@ const allStreams = [
     throughput: "3.2K/sec",
     errors: 12,
     warnings: 8,
-    mediationType: "Convergent"
+    mediationType: "Convergent",
+    lastUpdated: "2024-01-20T15:00:00Z"
   },
   {
     id: "convergent-002",
@@ -95,7 +87,8 @@ const allStreams = [
     throughput: "1.1K/sec",
     errors: 45,
     warnings: 15,
-    mediationType: "Convergent"
+    mediationType: "Convergent",
+    lastUpdated: "2024-01-20T11:30:00Z"
   },
   {
     id: "ncc-001",
@@ -106,7 +99,8 @@ const allStreams = [
     throughput: "850/sec",
     errors: 3,
     warnings: 12,
-    mediationType: "NCC"
+    mediationType: "NCC",
+    lastUpdated: "2024-01-20T14:15:00Z"
   },
   {
     id: "ncc-002",
@@ -117,7 +111,8 @@ const allStreams = [
     throughput: "0/sec",
     errors: 0,
     warnings: 1,
-    mediationType: "NCC"
+    mediationType: "NCC",
+    lastUpdated: "2024-01-20T10:45:00Z"
   }
 ];
 
@@ -257,12 +252,12 @@ export function StreamsPage() {
                   <thead className="bg-gradient-to-r from-muted/40 to-muted/30 border-b border-border">
                     <tr>
                       <th className="text-left font-semibold text-foreground px-6 py-4">Stream Name</th>
-                      <th className="text-left font-semibold text-foreground px-6 py-4">Status</th>
+                      <th className="text-left font-semibold text-foreground px-6 py-4">Running Status</th>
+                      <th className="text-left font-semibold text-foreground px-6 py-4">Deployment Status</th>
                       <th className="text-left font-semibold text-foreground px-6 py-4">Performance</th>
                       <th className="text-left font-semibold text-foreground px-6 py-4">Health</th>
-                      <th className="text-left font-semibold text-foreground px-6 py-4">Last Updated</th>
+                      <th className="text-left font-semibold text-foreground px-6 py-4">Last Updated Date</th>
                       <th className="text-left font-semibold text-foreground px-6 py-4">Mediation Type</th>
-                      <th className="text-center font-semibold text-foreground px-6 py-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
@@ -288,6 +283,11 @@ export function StreamsPage() {
                               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                             )}
                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge className={stream.runningStatus === 'RUNNING' ? "bg-success/10 text-success border-success/20" : "bg-warning/10 text-warning border-warning/20"}>
+                            {stream.runningStatus === 'RUNNING' ? 'Deployed' : 'Draft'}
+                          </Badge>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
@@ -322,53 +322,12 @@ export function StreamsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                            <span className="text-sm text-muted-foreground">By: {stream.lastUpdatedBy}</span>
-                            <span className="text-xs text-muted-foreground">Created: {stream.lastCreatedBy}</span>
+                            <span className="text-sm text-foreground">{new Date(stream.lastUpdated).toLocaleDateString()}</span>
+                            <span className="text-xs text-muted-foreground">{new Date(stream.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           {getMediationTypeBadge(stream.mediationType)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 hover:bg-blue-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/streams/${stream.id}`);
-                              }}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-8 w-8 p-0 hover:bg-muted"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Settings className="h-3 w-3 mr-2" />
-                                  Configure
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Play className="h-3 w-3 mr-2" />
-                                  Start/Stop
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <BarChart3 className="h-3 w-3 mr-2" />
-                                  View Metrics
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
                         </td>
                       </tr>
                     ))}
