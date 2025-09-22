@@ -43,6 +43,8 @@ import { LoadingCard } from "@/components/ui/loading";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import axios from "axios";
 import { gitService, type GitInfo } from "@/services/gitService";
+import { EventManagementPage } from "./devtool/EventManagementPage";
+import { ConfigManagementPage } from "./devtool/ConfigManagementPage";
 
 export function DevToolPage() {
   const navigate = useNavigate();
@@ -986,6 +988,14 @@ export function DevToolPage() {
                     <Grid3X3 className="mr-2 h-4 w-4" />
                     Parameters
                   </TabsTrigger>
+                  <TabsTrigger value="events" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Activity className="mr-2 h-4 w-4" />
+                    Event Management
+                  </TabsTrigger>
+                  <TabsTrigger value="configs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Config Management
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
@@ -1115,6 +1125,16 @@ export function DevToolPage() {
                     renderParametersList(getPaginatedItems(parameters, 'parameters'), parameters.length)
                   )}
                 </div>
+              </TabsContent>
+
+              {/* Event Management Tab */}
+              <TabsContent value="events" className="p-6">
+                <EventManagementPage />
+              </TabsContent>
+
+              {/* Config Management Tab */}
+              <TabsContent value="configs" className="p-6">
+                <ConfigManagementPage />
               </TabsContent>
 
             </Tabs>
