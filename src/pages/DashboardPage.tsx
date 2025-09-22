@@ -100,25 +100,18 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header Section */}
-      <div className="border-b bg-card">
-        <div className="flex items-center justify-between px-8 py-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Monitor and manage your data streams</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground">
-              Last updated: {currentTime.toLocaleTimeString()}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="p-6">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/20">
+                <BarChart3 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                <p className="text-muted-foreground">Monitor and manage your data streams</p>
+              </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
           </div>
         </div>
       </div>

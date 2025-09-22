@@ -26,6 +26,11 @@ import { CreateParameterPage } from "@/pages/parameters/create-parameter/CreateP
 import { EditParameterPage } from "@/pages/parameters/edit-parameter/EditParameterPage";
 import { DevToolPage } from "@/pages/DevToolPage";
 import { StreamDetailPage } from "@/pages/StreamDetailPage";
+import { ChargingMediationPage } from "@/pages/mediations/ChargingMediationPage";
+import { ConvergentMediationPage } from "@/pages/mediations/ConvergentMediationPage";
+import { NCCMediationPage } from "@/pages/mediations/NCCMediationPage";
+import { TopicDetailPage } from "@/pages/mediations/components/TopicDetailPage";
+import { ConfigDetailPage } from "@/pages/mediations/components/ConfigDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +77,13 @@ const App = () => (
                 <Route path="/subnodes/create" element={<CreateSubnodePage />} />
                 <Route path="/subnodes/:id/edit" element={<EditSubnodePage />} />
                 <Route path="/subnodes/:id/edit-version" element={<EditVersionPage />} />
+                
+                {/* Mediation routes */}
+                <Route path="/mediations/charging" element={<ChargingMediationPage />} />
+                <Route path="/mediations/convergent" element={<ConvergentMediationPage />} />
+                <Route path="/mediations/ncc" element={<NCCMediationPage />} />
+                <Route path="/mediations/events/topics/:topicId" element={<TopicDetailPage />} />
+                <Route path="/mediations/config/:configId" element={<ConfigDetailPage />} />
                 
                 {/* Parameter routes */}
                 <Route path="/parameters/new" element={<CreateParameterPage />} />

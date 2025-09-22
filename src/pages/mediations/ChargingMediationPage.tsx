@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { EventManagement } from "./components/EventManagement";
+import { ConfigManagement } from "./components/ConfigManagement";
 
 const chargingStreams = [
   {
@@ -45,6 +48,7 @@ export function ChargingMediationPage() {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("streams");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -166,111 +170,129 @@ export function ChargingMediationPage() {
           </Card>
         </div>
 
-        {/* Streams Table */}
-        <Card className="border border-border bg-card">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <CardTitle className="text-lg font-semibold text-foreground">Streams</CardTitle>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground">
-                    Filter by:
-                  </label>
-                  <select 
-                    id="status-filter"
-                    className="h-9 border border-input bg-background px-3 py-1 text-sm text-foreground"
-                    defaultValue="all"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="RUNNING">Running</option>
-                    <option value="STOPPED">Stopped</option>
-                    <option value="PARTIAL">Partial</option>
-                  </select>
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search flows..."
-                    className="h-9 w-full sm:w-64 border border-input bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-hidden border border-border">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/30 border-b border-border">
-                    <tr>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
-                        Stream Name
-                      </th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
-                        Errors / Warnings  
-                      </th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
-                        Instances
-                      </th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
-                        Status
-                      </th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
-                        Throughput
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {chargingStreams.map((stream) => (
-                      <tr 
-                        key={stream.id}
-                        className="hover:bg-muted/30 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/streams/${stream.id}`)}
+        {/* Tabbed Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="streams">Streams</TabsTrigger>
+            <TabsTrigger value="events">Event Management</TabsTrigger>
+            <TabsTrigger value="config">Config Management</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="streams">
+            <Card className="border border-border bg-card">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg font-semibold text-foreground">Streams</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground">
+                        Filter by:
+                      </label>
+                      <select 
+                        id="status-filter"
+                        className="h-9 border border-input bg-background px-3 py-1 text-sm text-foreground"
+                        defaultValue="all"
                       >
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {stream.name}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-medium ${stream.errors > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                              {stream.errors.toLocaleString()}
-                            </span>
-                            <span className="text-muted-foreground">/</span>
-                            <span className={`font-medium ${stream.warnings > 0 ? 'text-warning' : 'text-muted-foreground'}`}>
-                              {stream.warnings}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {stream.instances}
-                        </td>
-                        <td className="px-4 py-3">
-                          {getStatusBadge(stream.status)}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-foreground">
-                          {stream.throughput}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
-              <div className="text-sm text-muted-foreground">
-                Showing 1 to {chargingStreams.length} of {chargingStreams.length} streams
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled>
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                        <option value="all">All Status</option>
+                        <option value="RUNNING">Running</option>
+                        <option value="STOPPED">Stopped</option>
+                        <option value="PARTIAL">Partial</option>
+                      </select>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search flows..."
+                        className="h-9 w-full sm:w-64 border border-input bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-hidden border border-border">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/30 border-b border-border">
+                        <tr>
+                          <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                            Stream Name
+                          </th>
+                          <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                            Errors / Warnings  
+                          </th>
+                          <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                            Instances
+                          </th>
+                          <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                            Status
+                          </th>
+                          <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                            Throughput
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {chargingStreams.map((stream) => (
+                          <tr 
+                            key={stream.id}
+                            className="hover:bg-muted/30 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/streams/${stream.id}`)}
+                          >
+                            <td className="px-4 py-3 font-medium text-foreground">
+                              {stream.name}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${stream.errors > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                  {stream.errors.toLocaleString()}
+                                </span>
+                                <span className="text-muted-foreground">/</span>
+                                <span className={`font-medium ${stream.warnings > 0 ? 'text-warning' : 'text-muted-foreground'}`}>
+                                  {stream.warnings}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {stream.instances}
+                            </td>
+                            <td className="px-4 py-3">
+                              {getStatusBadge(stream.status)}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-foreground">
+                              {stream.throughput}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
+                  <div className="text-sm text-muted-foreground">
+                    Showing 1 to {chargingStreams.length} of {chargingStreams.length} streams
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" disabled>
+                      Previous
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="events">
+            <EventManagement />
+          </TabsContent>
+
+          <TabsContent value="config">
+            <ConfigManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

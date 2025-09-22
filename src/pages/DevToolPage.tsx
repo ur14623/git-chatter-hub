@@ -941,18 +941,28 @@ export function DevToolPage() {
   }, [gitLoading]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="w-full px-6 py-8">
-        {/* Enhanced Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">Development Tools</h1>
-              <p className="text-lg text-muted-foreground">Manage and monitor your enterprise development environment</p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/20">
+      {/* Header Section */}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="p-6">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-200/20">
+                <Settings className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Developer Tools</h1>
+                <p className="text-muted-foreground">Comprehensive development and management utilities</p>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
+      <div className="w-full px-6 py-8">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+        </div>
 
         {/* Enhanced Tabs */}
         <div className="shadow-lg border border-border rounded-lg bg-card/50 backdrop-blur-sm">
@@ -1027,10 +1037,6 @@ export function DevToolPage() {
                         <Plus className="mr-2 h-4 w-4" />
                         Create New Node
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <Copy className="mr-2 h-4 w-4" />
-                        Clone
-                      </Button>
                     </div>
                   </div>
                   
@@ -1063,10 +1069,6 @@ export function DevToolPage() {
                         <Plus className="mr-2 h-4 w-4" />
                         Create New Subnode
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <Copy className="mr-2 h-4 w-4" />
-                        Clone
-                      </Button>
                     </div>
                   </div>
                   
@@ -1098,10 +1100,6 @@ export function DevToolPage() {
                       <Button onClick={() => navigate('/parameters/new')} className="bg-success text-success-foreground hover:bg-success/90">
                         <Plus className="mr-2 h-4 w-4" />
                         Create New Parameter
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Copy className="mr-2 h-4 w-4" />
-                        Clone
                       </Button>
                     </div>
                   </div>
