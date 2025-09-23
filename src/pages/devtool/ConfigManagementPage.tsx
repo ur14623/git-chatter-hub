@@ -143,6 +143,7 @@ export function ConfigManagementPage() {
   const [filteredConfigs, setFilteredConfigs] = useState(mockKafkaConfigs);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [configType, setConfigType] = useState("kafka");
   const [selectedConfig, setSelectedConfig] = useState<any>(null);
   const [showConfigDetail, setShowConfigDetail] = useState(false);
   const [showCreateEdit, setShowCreateEdit] = useState(false);
@@ -278,72 +279,102 @@ export function ConfigManagementPage() {
   const getActiveConfigs = () => configs.filter(config => config.active);
 
   return (
-    <div className="bg-card rounded-lg border border-border shadow-sm">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-border">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Config Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage Kafka configurations and versions</p>
+      <div className="professional-card p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Configuration Management</h1>
+            <p className="text-muted-foreground mt-1">Manage system configurations and service integrations</p>
+          </div>
+          <div className="flex gap-3">
+            <Select value={configType} onValueChange={setConfigType}>
+              <SelectTrigger className="w-[160px] surface-interactive">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card border border-border shadow-lg">
+                <SelectItem value="kafka">Kafka Config</SelectItem>
+                <SelectItem value="database" disabled>Database Config</SelectItem>
+                <SelectItem value="redis" disabled>Redis Config</SelectItem>
+                <SelectItem value="security" disabled>Security Config</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleCreateNew} className="hover-scale">
+              <Plus className="h-4 w-4 mr-2" />
+              Create {configType === 'kafka' ? 'Kafka' : 'New'} Config
+            </Button>
+          </div>
         </div>
-        <Button onClick={handleCreateNew} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Config
-        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="p-6 border-b border-border bg-muted/10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <Card>
-            <CardContent className="flex items-center p-4">
-              <Database className="h-8 w-8 text-primary mr-3" />
-              <div>
-                <p className="text-2xl font-bold">{configs.length}</p>
-                <p className="text-xs text-muted-foreground">Total Configs</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center p-4">
-              <Power className="h-8 w-8 text-success mr-3" />
-              <div>
-                <p className="text-2xl font-bold">{getActiveConfigs().length}</p>
-                <p className="text-xs text-muted-foreground">Active Configs</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center p-4">
-              <Shield className="h-8 w-8 text-warning mr-3" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {configs.filter(c => c.securityProtocol === "SASL_SSL").length}
-                </p>
-                <p className="text-xs text-muted-foreground">Secure Configs</p>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="metric-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-foreground">{configs.length}</p>
+              <p className="text-sm text-muted-foreground">Total Configs</p>
+            </div>
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <Database className="h-6 w-6 text-primary" />
+            </div>
+          </div>
         </div>
+        <div className="metric-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-success">{getActiveConfigs().length}</p>
+              <p className="text-sm text-muted-foreground">Active Configs</p>
+            </div>
+            <div className="p-3 bg-success/10 rounded-lg">
+              <Power className="h-6 w-6 text-success" />
+            </div>
+          </div>
+        </div>
+        <div className="metric-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-warning">{configs.filter(c => c.securityProtocol === "SASL_SSL").length}</p>
+              <p className="text-sm text-muted-foreground">Secure Configs</p>
+            </div>
+            <div className="p-3 bg-warning/10 rounded-lg">
+              <Shield className="h-6 w-6 text-warning" />
+            </div>
+          </div>
+        </div>
+        <div className="metric-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-2xl font-bold text-info">{configs.reduce((sum, c) => sum + c.history.length, 0)}</p>
+              <p className="text-sm text-muted-foreground">Total Versions</p>
+            </div>
+            <div className="p-3 bg-info/10 rounded-lg">
+              <History className="h-6 w-6 text-info" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Filters */}
+      {/* Filters & Search */}
+      <div className="professional-card p-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search configs by name..."
+                placeholder="Search configurations by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 surface-interactive"
               />
             </div>
           </div>
           <div className="flex gap-3">
             <Select value={activeFilter} onValueChange={setActiveFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[140px] surface-interactive">
                 <SelectValue placeholder="All Configs" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card border border-border shadow-lg">
                 <SelectItem value="all">All Configs</SelectItem>
                 <SelectItem value="active">Active Only</SelectItem>
                 <SelectItem value="inactive">Inactive Only</SelectItem>
@@ -354,35 +385,29 @@ export function ConfigManagementPage() {
       </div>
 
       {/* Configs Table */}
-      <div className="overflow-hidden">
+      <div className="professional-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border bg-muted/30">
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Name
+            <TableRow className="border-b border-border bg-muted/50">
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Configuration Name
               </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Version
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Version & Status
               </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Active
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Connection Details
               </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Bootstrap Servers
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Security
               </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Security Protocol
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Client Info
               </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Client ID
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Last Updated
               </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Created At
-              </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Updated At
-              </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
+              <TableHead className="h-14 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">
                 Actions
               </TableHead>
             </TableRow>
@@ -390,41 +415,56 @@ export function ConfigManagementPage() {
           <TableBody>
             {filteredConfigs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
-                  <div className="flex flex-col items-center gap-2">
-                    <Database className="h-8 w-8 text-muted-foreground/50" />
-                    <span className="text-sm">No configurations found</span>
+                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="p-4 bg-muted/30 rounded-full">
+                      <Database className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                    <div>
+                      <p className="font-medium">No configurations found</p>
+                      <p className="text-sm text-muted-foreground">Try adjusting your search criteria</p>
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
             ) : (
               filteredConfigs.map((config) => (
-                <TableRow key={config.id} className="hover:bg-muted/20 transition-colors">
-                  <TableCell className="px-6 py-4">
-                    <div className="font-medium text-foreground">{config.name}</div>
+                <TableRow key={config.id} className="hover:bg-muted/30 transition-colors border-b border-border/50">
+                  <TableCell className="px-6 py-5">
+                    <div className="space-y-1">
+                      <div className="font-semibold text-foreground">{config.name}</div>
+                      <div className="text-xs text-muted-foreground">ID: {config.id}</div>
+                    </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge variant="outline" className="text-xs font-medium">
-                      {config.version}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    {config.active ? (
-                      <Badge className="bg-success text-success-foreground border-success">
-                        <Power className="h-3 w-3 mr-1" />
-                        Active
+                  <TableCell className="px-6 py-5">
+                    <div className="space-y-2">
+                      <Badge variant="outline" className="text-xs font-medium">
+                        {config.version}
                       </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        <PowerOff className="h-3 w-3 mr-1" />
-                        Inactive
-                      </Badge>
-                    )}
+                      <div>
+                        {config.active ? (
+                          <Badge className="bg-success text-success-foreground border-success">
+                            <Power className="h-3 w-3 mr-1" />
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <PowerOff className="h-3 w-3 mr-1" />
+                            Inactive
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                    {truncateServers(config.bootstrapServers)}
+                  <TableCell className="px-6 py-5">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">{truncateServers(config.bootstrapServers)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {config.bootstrapServers.split(',').length} servers
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-6 py-5">
                     <Badge 
                       variant="outline"
                       className={`text-xs font-medium ${
@@ -433,33 +473,41 @@ export function ConfigManagementPage() {
                           : "bg-warning text-warning-foreground border-warning"
                       }`}
                     >
+                      <Shield className="h-3 w-3 mr-1" />
                       {config.securityProtocol}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                    {config.clientId}
+                  <TableCell className="px-6 py-5">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">{config.clientId}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Retries: {config.retries} | Timeout: {config.requestTimeoutMs}ms
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                    {formatDate(config.createdAt)}
+                  <TableCell className="px-6 py-5">
+                    <div className="space-y-1">
+                      <div className="text-sm font-medium">{formatDate(config.updatedAt)}</div>
+                      <div className="text-xs text-muted-foreground">by {config.updatedBy}</div>
+                    </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                    {formatDate(config.updatedAt)}
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-6 py-5">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewDetails(config)}
+                        className="hover-scale"
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        Details
+                        View
                       </Button>
                       {!config.active ? (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleActivateConfig(config.id)}
+                          className="hover-scale text-success border-success/30 hover:bg-success/10"
                         >
                           <Power className="h-3 w-3 mr-1" />
                           Activate
@@ -469,6 +517,7 @@ export function ConfigManagementPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeactivateConfig(config.id)}
+                          className="hover-scale text-muted-foreground border-muted-foreground/30"
                         >
                           <PowerOff className="h-3 w-3 mr-1" />
                           Deactivate
@@ -478,6 +527,7 @@ export function ConfigManagementPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditConfig(config)}
+                        className="hover-scale"
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Edit
@@ -486,6 +536,7 @@ export function ConfigManagementPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleCloneConfig(config)}
+                        className="hover-scale"
                       >
                         <Copy className="h-3 w-3 mr-1" />
                         Clone
@@ -494,6 +545,7 @@ export function ConfigManagementPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteConfig(config.id)}
+                        className="hover-scale text-destructive border-destructive/30 hover:bg-destructive/10"
                       >
                         <Trash2 className="h-3 w-3 mr-1" />
                         Delete
