@@ -11,7 +11,12 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminLayout from "./pages/admin/AdminLayout";
+import DashboardPage from "./pages/admin/DashboardPage";
+import ProjectsPage from "./pages/admin/ProjectsPage";
+import TicketsPage from "./pages/admin/TicketsPage";
+import TicketDetailPage from "./pages/admin/TicketDetailPage";
+import TeamPage from "./pages/admin/TeamPage";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +46,15 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin-site/login" element={<AdminLogin />} />
-            <Route path="/admin-site" element={<AdminDashboard />} />
+            <Route path="/admin-site" element={<AdminLayout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="tickets" element={<TicketsPage />} />
+              <Route path="tickets/:id" element={<TicketDetailPage />} />
+              <Route path="team" element={<TeamPage />} />
+              <Route path="reports" element={<div className="p-6">Reports - Coming Soon</div>} />
+              <Route path="settings" element={<div className="p-6">Settings - Coming Soon</div>} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
