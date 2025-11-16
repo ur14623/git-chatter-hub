@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import DashboardPage from "./pages/admin/DashboardPage";
 import ProjectsPage from "./pages/admin/ProjectsPage";
+import ProjectDetailPage from "./pages/admin/ProjectDetailPage";
 import TicketsPage from "./pages/admin/TicketsPage";
 import TicketDetailPage from "./pages/admin/TicketDetailPage";
 import TeamPage from "./pages/admin/TeamPage";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/admin-site" element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="projects" element={<ProjectsPage />} />
+              <Route path="projects/:id" element={<ProjectDetailPage />} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/:id" element={<TicketDetailPage />} />
               <Route path="team" element={<TeamPage />} />
