@@ -6,8 +6,6 @@ import {
   FolderKanban, 
   Ticket, 
   Users, 
-  BarChart3, 
-  Settings, 
   LogOut,
   Bell,
   Menu,
@@ -33,8 +31,6 @@ const AdminLayout = () => {
     { icon: FolderKanban, label: "Projects", path: "/admin-site/projects" },
     { icon: Ticket, label: "Tickets", path: "/admin-site/tickets" },
     { icon: Users, label: "Team", path: "/admin-site/team" },
-    { icon: BarChart3, label: "Reports", path: "/admin-site/reports" },
-    { icon: Settings, label: "Settings", path: "/admin-site/settings" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
