@@ -5,6 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { 
   Plus, 
   Search, 
@@ -175,7 +183,8 @@ const ProjectsPage = () => {
 
   const stats = [
     { label: "Total Projects", value: projects.length },
-    { label: "Active", value: projects.filter(p => p.status === "Developing").length },
+    { label: "Ongoing Developing", value: projects.filter(p => p.status === "Developing").length },
+    { label: "Testing Ongoing", value: projects.filter(p => p.status === "Testing").length },
     { label: "Completed", value: projects.filter(p => p.status === "Deployed").length },
   ];
 
@@ -194,7 +203,7 @@ const ProjectsPage = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <Card key={index}>
             <CardHeader className="pb-2">
@@ -285,8 +294,8 @@ const ProjectsPage = () => {
             </Button>
           </div>
         </Card>
-      ) : (
-        <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedProjects.map((project) => (
             <Card 
               key={project.id} 
@@ -410,6 +419,114 @@ const ProjectsPage = () => {
             </Card>
           ))}
         </div>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Team</TableHead>
+                <TableHead>Tickets</TableHead>
+                <TableHead>Dates</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedProjects.map((project) => (
+                <TableRow 
+                  key={project.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/admin-site/projects/${project.id}`)}
+                >
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{project.name}</div>
+                      <div className="text-sm text-muted-foreground line-clamp-1">
+                        {project.description}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(project.status)}>
+                      {project.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 min-w-[120px]">
+                      <Progress value={project.progress} className="h-2 flex-1" />
+                      <span className="text-sm font-medium">{project.progress}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex -space-x-2">
+                      {project.team.map((member, idx) => (
+                        <Avatar key={idx} className="h-7 w-7 border-2 border-background">
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-[#4361ee] to-[#3f37c9] text-white">
+                            {member}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{project.completedTickets}/{project.totalTickets}</span>
+                      <span className="text-xs text-muted-foreground">({project.openTickets} open)</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {project.startDate} - {project.endDate}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {project.githubLink && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(project.githubLink, '_blank');
+                          }}
+                        >
+                          <Github className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {project.demoVideo && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(project.demoVideo, '_blank');
+                          }}
+                        >
+                          <Video className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin-site/projects/${project.id}`);
+                        }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {/* Create Project Dialog */}
