@@ -187,9 +187,9 @@ const ProjectDetailPage = () => {
 
   const ticketStats = {
     total: tickets.length,
+    developing: tickets.filter(t => t.status === "Developing").length,
+    testing: tickets.filter(t => t.status === "Testing").length,
     completed: tickets.filter(t => t.status === "Deployed").length,
-    open: tickets.filter(t => t.status !== "Deployed").length,
-    overdue: tickets.filter(t => new Date(t.dueDate) < new Date() && t.status !== "Deployed").length,
   };
 
   const handleAddTicket = () => {
@@ -311,22 +311,22 @@ const ProjectDetailPage = () => {
 
               <div>
                 <h4 className="text-sm font-medium mb-3">Quick Stats</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   <div className="p-3 rounded-lg bg-muted/50">
                     <p className="text-2xl font-bold text-foreground">{ticketStats.total}</p>
                     <p className="text-xs text-muted-foreground">Total Tickets</p>
                   </div>
+                  <div className="p-3 rounded-lg bg-yellow-500/10">
+                    <p className="text-2xl font-bold text-yellow-600">{ticketStats.developing}</p>
+                    <p className="text-xs text-muted-foreground">Developing</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-purple-500/10">
+                    <p className="text-2xl font-bold text-purple-600">{ticketStats.testing}</p>
+                    <p className="text-xs text-muted-foreground">Testing</p>
+                  </div>
                   <div className="p-3 rounded-lg bg-green-500/10">
                     <p className="text-2xl font-bold text-green-600">{ticketStats.completed}</p>
                     <p className="text-xs text-muted-foreground">Completed</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-blue-500/10">
-                    <p className="text-2xl font-bold text-blue-600">{ticketStats.open}</p>
-                    <p className="text-xs text-muted-foreground">Open</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-red-500/10">
-                    <p className="text-2xl font-bold text-red-600">{ticketStats.overdue}</p>
-                    <p className="text-xs text-muted-foreground">Overdue</p>
                   </div>
                 </div>
               </div>
