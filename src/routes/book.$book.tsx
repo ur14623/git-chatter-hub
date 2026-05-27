@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Copy, Check, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Copy, Check, Loader2, X, Highlighter, Languages, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { bibleService } from "@/services/api";
 import { useI18n } from "@/lib/i18n";
 import { findBook, localizedBookName } from "@/data/bible";
+import { VerseComparePanel } from "@/components/VerseComparePanel";
+import { VerseExplainPanel } from "@/components/VerseExplainPanel";
 
 export const Route = createFileRoute("/book/$book")({
   head: () => ({ meta: [{ title: "Book — Bible" }] }),
@@ -18,6 +20,8 @@ function slugToBookName(slug: string): string {
     .map((p) => (p.match(/^\d+$/) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
     .join(" ");
 }
+
+type PanelTab = "compare" | "explain";
 
 function BookDetailPage() {
   const { book: slug } = Route.useParams();
@@ -46,6 +50,39 @@ function BookDetailPage() {
     currentIdx >= 0 && currentIdx < chapters.length - 1 ? chapters[currentIdx + 1] : null;
   const [copied, setCopied] = useState(false);
 
+  // Verse interaction state
+  const [openVerse, setOpenVerse] = useState<number | null>(null);
+  const [activeVerse, setActiveVerse] = useState<{ verse: number; text: string } | null>(null);
+  const [panelTab, setPanelTab] = useState<PanelTab | null>(null);
+  const highlightKey = `bible.highlights.${bookName}`;
+  const [highlights, setHighlights] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(highlightKey);
+      setHighlights(raw ? JSON.parse(raw) : {});
+    } catch {
+      setHighlights({});
+    }
+  }, [highlightKey]);
+
+  const persistHighlights = (next: Record<string, boolean>) => {
+    setHighlights(next);
+    try {
+      localStorage.setItem(highlightKey, JSON.stringify(next));
+    } catch {}
+  };
+
+  const verseKey = (ch: number, v: number) => `${ch}:${v}`;
+
+  const toggleHighlight = (ch: number, v: number) => {
+    const k = verseKey(ch, v);
+    const next = { ...highlights };
+    if (next[k]) delete next[k];
+    else next[k] = true;
+    persistHighlights(next);
+  };
+
   const handleCopy = async () => {
     if (!currentChapter) return;
     const text = currentChapter.verses.map((v) => `${v.verse} ${v.text}`).join(" ");
@@ -54,16 +91,27 @@ function BookDetailPage() {
       await navigator.clipboard.writeText(header + text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* noop */
-    }
+    } catch {}
   };
+
+  const closePanel = () => {
+    setPanelTab(null);
+    setActiveVerse(null);
+    setOpenVerse(null);
+  };
+
+  // Close panel when chapter changes
+  useEffect(() => {
+    closePanel();
+  }, [currentChapter?.chapter]);
+
+  const showPanel = panelTab !== null && activeVerse !== null && currentChapter !== null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/30 via-background to-background">
       <Header />
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8">
         <Link
           to="/"
           className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-primary"
@@ -109,7 +157,13 @@ function BookDetailPage() {
             No chapters available.
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-[140px_1fr]">
+          <div
+            className={`grid gap-6 ${
+              showPanel
+                ? "md:grid-cols-[140px_minmax(0,1fr)_minmax(0,380px)]"
+                : "md:grid-cols-[140px_1fr]"
+            }`}
+          >
             <aside className="md:sticky md:top-20 md:self-start">
               <div className="rounded-2xl border border-border/60 bg-card/80 p-3 shadow-sm backdrop-blur">
                 <div className="mb-3 flex items-center justify-between px-1">
@@ -150,13 +204,9 @@ function BookDetailPage() {
                     className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:border-primary/40 hover:text-primary"
                   >
                     {copied ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" /> Copied
-                      </>
+                      <><Check className="h-3.5 w-3.5" /> Copied</>
                     ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" /> Copy
-                      </>
+                      <><Copy className="h-3.5 w-3.5" /> Copy</>
                     )}
                   </button>
                   <header className="mb-10 text-center">
@@ -174,20 +224,72 @@ function BookDetailPage() {
                   </header>
 
                   <div className="mx-auto max-w-3xl font-serif text-[1.35rem] leading-[2.1] text-foreground/90 sm:text-[1.5rem] sm:leading-[2.2]">
-                    {currentChapter.verses.map((v, i) => (
-                      <span key={v.verse}>
-                        {i === 0 ? (
-                          <span className="float-left mr-3 mt-2 font-serif text-7xl font-semibold leading-none text-primary">
-                            {v.text.charAt(0)}
+                    {currentChapter.verses.map((v) => {
+                      const k = verseKey(currentChapter.chapter, v.verse);
+                      const isHighlighted = !!highlights[k];
+                      const isOpen = openVerse === v.verse;
+                      const isActive = activeVerse?.verse === v.verse && showPanel;
+                      return (
+                        <span key={v.verse} className="relative">
+                          <sup className="mr-1 select-none align-super text-[0.75rem] font-bold text-primary/70">
+                            {v.verse}
+                          </sup>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setOpenVerse(isOpen ? null : v.verse)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setOpenVerse(isOpen ? null : v.verse);
+                              }
+                            }}
+                            className={`cursor-pointer rounded transition ${
+                              isHighlighted ? "bg-yellow-200/60 dark:bg-yellow-500/25 px-1" : ""
+                            } ${isActive ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-card" : ""} hover:bg-primary/10`}
+                          >
+                            {v.text}
                           </span>
-                        ) : null}
-                        <sup className="mr-1 select-none align-super text-[0.75rem] font-bold text-primary/70">
-                          {v.verse}
-                        </sup>
-                        {i === 0 ? v.text.slice(1) : v.text}
-                        {" "}
-                      </span>
-                    ))}
+                          {isOpen && (
+                            <span className="relative inline-block align-baseline">
+                              <span className="absolute left-0 top-1 z-20 flex flex-wrap gap-1 rounded-lg border border-border bg-popover p-1.5 text-sm shadow-lg">
+                                <button
+                                  onClick={() => {
+                                    toggleHighlight(currentChapter.chapter, v.verse);
+                                    setOpenVerse(null);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
+                                >
+                                  <Highlighter className="h-3.5 w-3.5" />
+                                  {isHighlighted ? "Unhighlight" : "Highlight"}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setActiveVerse({ verse: v.verse, text: v.text });
+                                    setPanelTab("compare");
+                                    setOpenVerse(null);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
+                                >
+                                  <Languages className="h-3.5 w-3.5" /> Compare
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setActiveVerse({ verse: v.verse, text: v.text });
+                                    setPanelTab("explain");
+                                    setOpenVerse(null);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" /> Explain
+                                </button>
+                              </span>
+                            </span>
+                          )}
+                          {" "}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -223,6 +325,64 @@ function BookDetailPage() {
                   </button>
                 </nav>
               </article>
+            )}
+
+            {showPanel && activeVerse && currentChapter && (
+              <aside className="md:sticky md:top-20 md:self-start">
+                <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setPanelTab("compare")}
+                        className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
+                          panelTab === "compare"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-foreground hover:bg-primary/10"
+                        }`}
+                      >
+                        <Languages className="h-3.5 w-3.5" /> Compare
+                      </button>
+                      <button
+                        onClick={() => setPanelTab("explain")}
+                        className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
+                          panelTab === "explain"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-foreground hover:bg-primary/10"
+                        }`}
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> AI Explain
+                      </button>
+                    </div>
+                    <button
+                      onClick={closePanel}
+                      aria-label="Close panel"
+                      className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="border-b border-border bg-secondary/40 px-4 py-2 text-xs text-muted-foreground">
+                    {localized} {currentChapter.chapter}:{activeVerse.verse}
+                  </div>
+                  <div className="max-h-[70vh] overflow-y-auto p-4">
+                    {panelTab === "compare" ? (
+                      <VerseComparePanel
+                        book={bookName}
+                        chapter={currentChapter.chapter}
+                        verse={activeVerse.verse}
+                      />
+                    ) : (
+                      <VerseExplainPanel
+                        book={bookName}
+                        chapter={currentChapter.chapter}
+                        verse={activeVerse.verse}
+                        text={activeVerse.text}
+                        reference={`${localized} ${currentChapter.chapter}:${activeVerse.verse}`}
+                      />
+                    )}
+                  </div>
+                </div>
+              </aside>
             )}
           </div>
         )}
