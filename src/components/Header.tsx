@@ -25,6 +25,7 @@ export function Header() {
           {t.appName}
         </Link>
         <div className="flex items-center gap-2">
+          <SettingsMenu />
           <div className="relative">
             <button
               onClick={() => setLangOpen((o) => !o)}
