@@ -40,6 +40,17 @@ function BookDetailPage() {
   });
 
   const chapters = fullQ.data?.chapters ?? [];
+  const bookId = fullQ.data?.book_id;
+
+  const progressQ = useQuery({
+    queryKey: ["audio-progress", bookId, user?.email],
+    queryFn: () => audioService.getProgress(bookId!),
+    enabled: !!user && !!bookId,
+    retry: 0,
+  });
+  const completedChapters = new Set<number>(progressQ.data?.data?.completed_chapters ?? []);
+  const progressPct = progressQ.data?.data?.progress_percentage ?? 0;
+
   const [activeChapter, setActiveChapter] = useState<number | null>(null);
   const currentChapter = useMemo(() => {
     if (!chapters.length) return null;
