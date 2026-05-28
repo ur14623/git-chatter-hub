@@ -31,7 +31,10 @@ function Index() {
     retry: 1,
   });
 
-  const books: ApiBook[] = booksQ.data?.books ?? [];
+  const books: ApiBook[] = useMemo(() => {
+    const list = booksQ.data?.books ?? [];
+    return [...list].sort((a, b) => (a.bible_order ?? a.id) - (b.bible_order ?? b.id));
+  }, [booksQ.data]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
