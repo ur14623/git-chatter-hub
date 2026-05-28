@@ -438,9 +438,34 @@ export type VerseResponse = {
   language: string;
   status: string;
 };
+export type FullBookChapter = {
+  chapter: number;
+  verses: BibleVerse[];
+  has_audio?: boolean;
+  audio_url?: string | null;
+  audio_duration?: number | null;
+};
 export type FullBookResponse = {
   book: string;
-  chapters: { chapter: number; verses: BibleVerse[] }[];
+  book_id?: number;
+  language?: string;
+  has_audio?: boolean;
+  audio_info?: {
+    has_audio: boolean;
+    type?: string;
+    book_audio_url?: string | null;
+    book_duration?: number | null;
+    chapters_with_audio?: number;
+  };
+  chapters: FullBookChapter[];
+};
+
+export type AudioProgress = {
+  completed_chapters: number[];
+  current_chapter: number;
+  next_chapter?: number;
+  book_completed: boolean;
+  progress_percentage: number;
 };
 
 export const removeDuplicateVerses = (verses: BibleVerse[]): BibleVerse[] => {
