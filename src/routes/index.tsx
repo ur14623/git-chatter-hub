@@ -137,7 +137,12 @@ function BookCard({ index, book, lang }: { index: number; book: ApiBook; lang: s
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs font-semibold text-primary/70">#{index + 1}</div>
-          <h3 className="font-serif text-xl font-semibold text-card-foreground">{localized}</h3>
+          <h3 className="font-serif text-xl font-semibold text-card-foreground inline-flex items-center gap-1.5">
+            {localized}
+            {book.has_audio && (
+              <Volume2 className="h-4 w-4 text-primary" aria-label="Audio available" />
+            )}
+          </h3>
           {localized !== book.name && (
             <p className="text-xs text-muted-foreground">{book.name}</p>
           )}
