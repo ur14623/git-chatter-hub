@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { bibleService } from "@/services/api";
 import { bookSlug, localizedBookName } from "@/data/bible";
 
-type ApiBook = { id: number; name: string; testament: "Old" | "New"; chapters: number };
+type ApiBook = { id: number; name: string; testament: "Old" | "New"; chapters: number; has_audio?: boolean; bible_order?: number };
 
 export const Route = createFileRoute("/")({
   head: () => ({
