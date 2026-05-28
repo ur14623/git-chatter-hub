@@ -15,6 +15,21 @@ type Props = {
   onCompleted?: (chapter: number) => void;
 };
 
+const INTENT_KEY = "audio.userIntentPlaying";
+
+function readIntent(): boolean {
+  try {
+    return localStorage.getItem(INTENT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeIntent(v: boolean) {
+  try {
+    localStorage.setItem(INTENT_KEY, v ? "1" : "0");
+  } catch {}
+}
+
 function formatTime(s: number) {
   if (!isFinite(s) || s < 0) return "0:00";
   const m = Math.floor(s / 60);
@@ -39,8 +54,14 @@ export function ChapterAudioPlayer({
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const recordedRef = useRef<number | null>(null);
+  const intentRef = useRef<boolean>(false);
 
-  // Reset & autoplay when chapter changes
+  // Initialize intent from storage once on mount only; do NOT auto-play on first chapter load.
+  useEffect(() => {
+    intentRef.current = readIntent();
+  }, []);
+
+  // On chapter/source change: reset, and only auto-play if the user is actively playing.
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
@@ -49,7 +70,11 @@ export function ChapterAudioPlayer({
     recordedRef.current = null;
     if (audioUrl) {
       el.load();
-      el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      if (intentRef.current) {
+        el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      } else {
+        setPlaying(false);
+      }
     } else {
       setPlaying(false);
     }
@@ -59,8 +84,12 @@ export function ChapterAudioPlayer({
     const el = audioRef.current;
     if (!el || !audioUrl) return;
     if (el.paused) {
+      intentRef.current = true;
+      writeIntent(true);
       el.play().then(() => setPlaying(true)).catch(() => {});
     } else {
+      intentRef.current = false;
+      writeIntent(false);
       el.pause();
       setPlaying(false);
     }
@@ -68,7 +97,6 @@ export function ChapterAudioPlayer({
 
   const handleEnded = async () => {
     setPlaying(false);
-    // Record completion (logged-in only)
     if (user && bookId && recordedRef.current !== chapter) {
       recordedRef.current = chapter;
       try {
@@ -76,8 +104,20 @@ export function ChapterAudioPlayer({
         onCompleted?.(chapter);
       } catch {}
     }
-    // Auto-advance
-    if (hasNext) onNext();
+    // Keep intent true so the next chapter auto-plays in a continuous listen session.
+    if (hasNext && intentRef.current) onNext();
+  };
+
+  // If the user pauses via media keys / OS controls, respect that.
+  const handleNativePause = () => {
+    setPlaying(false);
+    intentRef.current = false;
+    writeIntent(false);
+  };
+  const handleNativePlay = () => {
+    setPlaying(true);
+    intentRef.current = true;
+    writeIntent(true);
   };
 
   const onSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,8 +145,8 @@ export function ChapterAudioPlayer({
         onTimeUpdate={(e) => setCurrent((e.target as HTMLAudioElement).currentTime)}
         onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration)}
         onEnded={handleEnded}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
+        onPlay={handleNativePlay}
+        onPause={handleNativePause}
       />
       <button
         onClick={onPrev}

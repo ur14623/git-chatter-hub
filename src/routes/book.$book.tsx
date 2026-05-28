@@ -173,14 +173,13 @@ function BookDetailPage() {
         ) : (
           <div
             className={`grid gap-6 ${
-              showPanel
-                ? "md:grid-cols-[140px_minmax(0,1fr)_minmax(0,380px)]"
-                : "md:grid-cols-[140px_1fr]"
+              showPanel ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]" : "grid-cols-1"
             }`}
           >
-            <aside className="md:sticky md:top-20 md:self-start">
+            <div className="min-w-0 space-y-6">
+              {/* Chapter list — horizontal */}
               <div className="rounded-2xl border border-border/60 bg-card/80 p-3 shadow-sm backdrop-blur">
-                <div className="mb-3 flex items-center justify-between px-1">
+                <div className="mb-2 flex items-center justify-between px-1">
                   <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Chapters
                   </h2>
@@ -188,7 +187,7 @@ function BookDetailPage() {
                     {chapters.length}
                   </span>
                 </div>
-                <div className="flex max-h-[68vh] flex-col gap-1.5 overflow-y-auto pr-1">
+                <div className="flex flex-row gap-1.5 overflow-x-auto pb-1">
                   {chapters.map((c) => {
                     const active = c.chapter === currentChapter?.chapter;
                     const done = completedChapters.has(c.chapter);
@@ -196,7 +195,7 @@ function BookDetailPage() {
                       <button
                         key={c.chapter}
                         onClick={() => setActiveChapter(c.chapter)}
-                        className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                        className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition ${
                           active
                             ? "bg-primary text-primary-foreground shadow-md"
                             : done
@@ -204,10 +203,8 @@ function BookDetailPage() {
                             : "bg-secondary/70 text-foreground hover:bg-primary/10 hover:text-primary"
                         }`}
                       >
-                        <span className="flex items-center gap-1.5">
-                          Chapter {c.chapter}
-                          {c.has_audio && <Volume2 className="h-3 w-3 opacity-70" />}
-                        </span>
+                        <span className="whitespace-nowrap">Chapter {c.chapter}</span>
+                        {c.has_audio && <Volume2 className="h-3 w-3 opacity-70" />}
                         {done && <CheckCircle2 className="h-3.5 w-3.5" />}
                       </button>
                     );
@@ -228,153 +225,155 @@ function BookDetailPage() {
                   </div>
                 )}
               </div>
-            </aside>
 
-            {currentChapter && (
-              <article className="min-w-0">
-                <div className="relative rounded-3xl border border-border/60 bg-card px-6 py-10 shadow-sm sm:px-12 sm:py-14">
-                  <button
-                    onClick={handleCopy}
-                    aria-label="Copy chapter"
-                    className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:border-primary/40 hover:text-primary"
-                  >
-                    {copied ? (
-                      <><Check className="h-3.5 w-3.5" /> Copied</>
-                    ) : (
-                      <><Copy className="h-3.5 w-3.5" /> Copy</>
-                    )}
-                  </button>
-                  <header className="mb-10 text-center">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-primary">
-                      Chapter
-                    </p>
-                    <div className="mt-1 font-serif text-6xl font-semibold text-foreground sm:text-7xl">
-                      {currentChapter.chapter}
-                    </div>
-                    <div className="mx-auto mt-4 flex items-center justify-center gap-3 text-muted-foreground">
-                      <span className="h-px w-10 bg-border" />
-                      <span className="text-xs uppercase tracking-[0.2em]">{localized}</span>
-                      <span className="h-px w-10 bg-border" />
-                    </div>
-                  </header>
+              {/* Audio player — outside the text card, same width */}
+              {currentChapter && (
+                <ChapterAudioPlayer
+                  bookId={bookId}
+                  chapter={currentChapter.chapter}
+                  audioUrl={currentChapter.audio_url}
+                  language={lang}
+                  hasPrev={!!prevChapter}
+                  hasNext={!!nextChapter}
+                  onPrev={() => prevChapter && setActiveChapter(prevChapter.chapter)}
+                  onNext={() => nextChapter && setActiveChapter(nextChapter.chapter)}
+                  onCompleted={() => progressQ.refetch()}
+                />
+              )}
 
-                  <div className="mx-auto mb-8 max-w-3xl">
-                    <ChapterAudioPlayer
-                      bookId={bookId}
-                      chapter={currentChapter.chapter}
-                      audioUrl={currentChapter.audio_url}
-                      language={lang}
-                      hasPrev={!!prevChapter}
-                      hasNext={!!nextChapter}
-                      onPrev={() => prevChapter && setActiveChapter(prevChapter.chapter)}
-                      onNext={() => nextChapter && setActiveChapter(nextChapter.chapter)}
-                      onCompleted={() => progressQ.refetch()}
-                    />
-                  </div>
+              {currentChapter && (
+                <article className="min-w-0">
+                  <div className="relative rounded-3xl border border-border/60 bg-card px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+                    <button
+                      onClick={handleCopy}
+                      aria-label="Copy chapter"
+                      className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:border-primary/40 hover:text-primary"
+                    >
+                      {copied ? (
+                        <><Check className="h-3.5 w-3.5" /> Copied</>
+                      ) : (
+                        <><Copy className="h-3.5 w-3.5" /> Copy</>
+                      )}
+                    </button>
+                    <header className="mb-10 text-center">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-primary">
+                        Chapter
+                      </p>
+                      <div className="mt-1 font-serif text-6xl font-semibold text-foreground sm:text-7xl">
+                        {currentChapter.chapter}
+                      </div>
+                      <div className="mx-auto mt-4 flex items-center justify-center gap-3 text-muted-foreground">
+                        <span className="h-px w-10 bg-border" />
+                        <span className="text-xs uppercase tracking-[0.2em]">{localized}</span>
+                        <span className="h-px w-10 bg-border" />
+                      </div>
+                    </header>
 
-                  <div className="mx-auto max-w-3xl font-serif text-[1.35rem] leading-[2.1] text-foreground/90 sm:text-[1.5rem] sm:leading-[2.2]">
-                    {currentChapter.verses.map((v) => {
-                      const k = verseKey(currentChapter.chapter, v.verse);
-                      const isHighlighted = !!highlights[k];
-                      const isOpen = openVerse === v.verse;
-                      const isActive = activeVerse?.verse === v.verse && showPanel;
-                      return (
-                        <span key={v.verse} className="relative">
-                          <sup className="mr-1 select-none align-super text-[0.75rem] font-bold text-primary/70">
-                            {v.verse}
-                          </sup>
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => setOpenVerse(isOpen ? null : v.verse)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setOpenVerse(isOpen ? null : v.verse);
-                              }
-                            }}
-                            className={`cursor-pointer rounded transition ${
-                              isHighlighted ? "bg-yellow-200/60 dark:bg-yellow-500/25 px-1" : ""
-                            } ${isActive ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-card" : ""} hover:bg-primary/10`}
-                          >
-                            {v.text}
-                          </span>
-                          {isOpen && (
-                            <span className="relative inline-block align-baseline">
-                              <span className="absolute left-0 top-1 z-20 flex flex-wrap gap-1 rounded-lg border border-border bg-popover p-1.5 text-sm shadow-lg">
-                                <button
-                                  onClick={() => {
-                                    toggleHighlight(currentChapter.chapter, v.verse);
-                                    setOpenVerse(null);
-                                  }}
-                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
-                                >
-                                  <Highlighter className="h-3.5 w-3.5" />
-                                  {isHighlighted ? "Unhighlight" : "Highlight"}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setActiveVerse({ verse: v.verse, text: v.text });
-                                    setPanelTab("compare");
-                                    setOpenVerse(null);
-                                  }}
-                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
-                                >
-                                  <Languages className="h-3.5 w-3.5" /> Compare
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setActiveVerse({ verse: v.verse, text: v.text });
-                                    setPanelTab("explain");
-                                    setOpenVerse(null);
-                                  }}
-                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
-                                >
-                                  <Sparkles className="h-3.5 w-3.5" /> Explain
-                                </button>
-                              </span>
+                    <div className="mx-auto max-w-3xl font-serif text-[1.35rem] leading-[2.1] text-foreground/90 sm:text-[1.5rem] sm:leading-[2.2]">
+                      {currentChapter.verses.map((v) => {
+                        const k = verseKey(currentChapter.chapter, v.verse);
+                        const isHighlighted = !!highlights[k];
+                        const isOpen = openVerse === v.verse;
+                        const isActive = activeVerse?.verse === v.verse && showPanel;
+                        return (
+                          <span key={v.verse} className="relative">
+                            <sup className="mr-1 select-none align-super text-[0.75rem] font-bold text-primary/70">
+                              {v.verse}
+                            </sup>
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setOpenVerse(isOpen ? null : v.verse)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setOpenVerse(isOpen ? null : v.verse);
+                                }
+                              }}
+                              className={`cursor-pointer rounded transition ${
+                                isHighlighted ? "bg-yellow-200/60 dark:bg-yellow-500/25 px-1" : ""
+                              } ${isActive ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-card" : ""} hover:bg-primary/10`}
+                            >
+                              {v.text}
                             </span>
-                          )}
-                          {" "}
-                        </span>
-                      );
-                    })}
+                            {isOpen && (
+                              <span className="relative inline-block align-baseline">
+                                <span className="absolute left-0 top-1 z-20 flex flex-wrap gap-1 rounded-lg border border-border bg-popover p-1.5 text-sm shadow-lg">
+                                  <button
+                                    onClick={() => {
+                                      toggleHighlight(currentChapter.chapter, v.verse);
+                                      setOpenVerse(null);
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
+                                  >
+                                    <Highlighter className="h-3.5 w-3.5" />
+                                    {isHighlighted ? "Unhighlight" : "Highlight"}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setActiveVerse({ verse: v.verse, text: v.text });
+                                      setPanelTab("compare");
+                                      setOpenVerse(null);
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
+                                  >
+                                    <Languages className="h-3.5 w-3.5" /> Compare
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setActiveVerse({ verse: v.verse, text: v.text });
+                                      setPanelTab("explain");
+                                      setOpenVerse(null);
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-popover-foreground hover:bg-secondary"
+                                  >
+                                    <Sparkles className="h-3.5 w-3.5" /> Explain
+                                  </button>
+                                </span>
+                              </span>
+                            )}
+                            {" "}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
 
-                <nav className="mx-auto mt-8 flex items-center justify-between gap-3">
-                  <button
-                    disabled={!prevChapter}
-                    onClick={() => prevChapter && setActiveChapter(prevChapter.chapter)}
-                    className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-medium text-foreground shadow-sm transition hover:-translate-x-0.5 hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-x-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="flex flex-col items-start leading-tight">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Previous
+                  <nav className="mx-auto mt-8 flex items-center justify-between gap-3">
+                    <button
+                      disabled={!prevChapter}
+                      onClick={() => prevChapter && setActiveChapter(prevChapter.chapter)}
+                      className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-medium text-foreground shadow-sm transition hover:-translate-x-0.5 hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-x-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Previous
+                        </span>
+                        <span>{prevChapter ? `Chapter ${prevChapter.chapter}` : "—"}</span>
                       </span>
-                      <span>{prevChapter ? `Chapter ${prevChapter.chapter}` : "—"}</span>
+                    </button>
+                    <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
+                      {currentChapter.chapter} / {chapters.length}
                     </span>
-                  </button>
-                  <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
-                    {currentChapter.chapter} / {chapters.length}
-                  </span>
-                  <button
-                    disabled={!nextChapter}
-                    onClick={() => nextChapter && setActiveChapter(nextChapter.chapter)}
-                    className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-medium text-foreground shadow-sm transition hover:translate-x-0.5 hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-x-0"
-                  >
-                    <span className="flex flex-col items-end leading-tight">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Next
+                    <button
+                      disabled={!nextChapter}
+                      onClick={() => nextChapter && setActiveChapter(nextChapter.chapter)}
+                      className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-medium text-foreground shadow-sm transition hover:translate-x-0.5 hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-x-0"
+                    >
+                      <span className="flex flex-col items-end leading-tight">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Next
+                        </span>
+                        <span>{nextChapter ? `Chapter ${nextChapter.chapter}` : "—"}</span>
                       </span>
-                      <span>{nextChapter ? `Chapter ${nextChapter.chapter}` : "—"}</span>
-                    </span>
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </nav>
-              </article>
-            )}
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </nav>
+                </article>
+              )}
+            </div>
+
 
             {showPanel && activeVerse && currentChapter && (
               <aside className="md:sticky md:top-20 md:self-start">
