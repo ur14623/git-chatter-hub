@@ -258,6 +258,20 @@ function BookDetailPage() {
                     </div>
                   </header>
 
+                  <div className="mx-auto mb-8 max-w-3xl">
+                    <ChapterAudioPlayer
+                      bookId={bookId}
+                      chapter={currentChapter.chapter}
+                      audioUrl={currentChapter.audio_url}
+                      language={lang}
+                      hasPrev={!!prevChapter}
+                      hasNext={!!nextChapter}
+                      onPrev={() => prevChapter && setActiveChapter(prevChapter.chapter)}
+                      onNext={() => nextChapter && setActiveChapter(nextChapter.chapter)}
+                      onCompleted={() => progressQ.refetch()}
+                    />
+                  </div>
+
                   <div className="mx-auto max-w-3xl font-serif text-[1.35rem] leading-[2.1] text-foreground/90 sm:text-[1.5rem] sm:leading-[2.2]">
                     {currentChapter.verses.map((v) => {
                       const k = verseKey(currentChapter.chapter, v.verse);
