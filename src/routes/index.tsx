@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Loader2, BookOpen, ArrowRight, TextSearch } from "lucide-react";
+import { Search, Loader2, BookOpen, ArrowRight, TextSearch, Volume2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { VerseOfTheDay } from "@/components/VerseOfTheDay";
