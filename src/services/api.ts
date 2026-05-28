@@ -498,9 +498,16 @@ export const bibleService = {
     }>(`/api/bible/search?q=${encodeURIComponent(q)}&language=${encodeURIComponent(lang)}&limit=${limit}`),
 
   getBooksByLanguage: (lang: string) =>
-    apiClient<{ books: { id: number; name: string; testament: "Old" | "New"; chapters: number }[] }>(
-      `/api/bible/books/by-language?language=${encodeURIComponent(lang)}`
-    ),
+    apiClient<{
+      books: {
+        id: number;
+        name: string;
+        testament: "Old" | "New";
+        chapters: number;
+        has_audio?: boolean;
+        bible_order?: number;
+      }[];
+    }>(`/api/bible/books/by-language?language=${encodeURIComponent(lang)}`),
 
   getBooks: (testament: Testament, lang: string) =>
     apiClient<GetBooksResponse>(
