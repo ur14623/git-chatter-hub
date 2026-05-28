@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Copy, Check, Loader2, X, Highlighter, Languages, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Copy, Check, Loader2, X, Highlighter, Languages, Sparkles, Volume2, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
-import { bibleService } from "@/services/api";
+import { audioService, bibleService } from "@/services/api";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { findBook, localizedBookName } from "@/data/bible";
 import { VerseComparePanel } from "@/components/VerseComparePanel";
 import { VerseExplainPanel } from "@/components/VerseExplainPanel";
+import { ChapterAudioPlayer } from "@/components/ChapterAudioPlayer";
 
 export const Route = createFileRoute("/book/$book")({
   head: () => ({ meta: [{ title: "Book — Bible" }] }),
@@ -26,6 +28,7 @@ type PanelTab = "compare" | "explain";
 function BookDetailPage() {
   const { book: slug } = Route.useParams();
   const { lang } = useI18n();
+  const { user } = useAuth();
   const bookName = findBook(slug)?.name ?? slugToBookName(slug);
   const localized = localizedBookName(bookName, lang);
 
@@ -37,6 +40,17 @@ function BookDetailPage() {
   });
 
   const chapters = fullQ.data?.chapters ?? [];
+  const bookId = fullQ.data?.book_id;
+
+  const progressQ = useQuery({
+    queryKey: ["audio-progress", bookId, user?.email],
+    queryFn: () => audioService.getProgress(bookId!),
+    enabled: !!user && !!bookId,
+    retry: 0,
+  });
+  const completedChapters = new Set<number>(progressQ.data?.data?.completed_chapters ?? []);
+  const progressPct = progressQ.data?.data?.progress_percentage ?? 0;
+
   const [activeChapter, setActiveChapter] = useState<number | null>(null);
   const currentChapter = useMemo(() => {
     if (!chapters.length) return null;
@@ -177,21 +191,42 @@ function BookDetailPage() {
                 <div className="flex max-h-[68vh] flex-col gap-1.5 overflow-y-auto pr-1">
                   {chapters.map((c) => {
                     const active = c.chapter === currentChapter?.chapter;
+                    const done = completedChapters.has(c.chapter);
                     return (
                       <button
                         key={c.chapter}
                         onClick={() => setActiveChapter(c.chapter)}
-                        className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                        className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
                           active
                             ? "bg-primary text-primary-foreground shadow-md"
+                            : done
+                            ? "bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-500/20"
                             : "bg-secondary/70 text-foreground hover:bg-primary/10 hover:text-primary"
                         }`}
                       >
-                        Chapter {c.chapter}
+                        <span className="flex items-center gap-1.5">
+                          Chapter {c.chapter}
+                          {c.has_audio && <Volume2 className="h-3 w-3 opacity-70" />}
+                        </span>
+                        {done && <CheckCircle2 className="h-3.5 w-3.5" />}
                       </button>
                     );
                   })}
                 </div>
+                {user && progressQ.data && (
+                  <div className="mt-3 px-1">
+                    <div className="mb-1 flex justify-between text-[10px] font-medium text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{progressPct}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </aside>
 
@@ -222,6 +257,20 @@ function BookDetailPage() {
                       <span className="h-px w-10 bg-border" />
                     </div>
                   </header>
+
+                  <div className="mx-auto mb-8 max-w-3xl">
+                    <ChapterAudioPlayer
+                      bookId={bookId}
+                      chapter={currentChapter.chapter}
+                      audioUrl={currentChapter.audio_url}
+                      language={lang}
+                      hasPrev={!!prevChapter}
+                      hasNext={!!nextChapter}
+                      onPrev={() => prevChapter && setActiveChapter(prevChapter.chapter)}
+                      onNext={() => nextChapter && setActiveChapter(nextChapter.chapter)}
+                      onCompleted={() => progressQ.refetch()}
+                    />
+                  </div>
 
                   <div className="mx-auto max-w-3xl font-serif text-[1.35rem] leading-[2.1] text-foreground/90 sm:text-[1.5rem] sm:leading-[2.2]">
                     {currentChapter.verses.map((v) => {

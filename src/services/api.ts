@@ -438,9 +438,34 @@ export type VerseResponse = {
   language: string;
   status: string;
 };
+export type FullBookChapter = {
+  chapter: number;
+  verses: BibleVerse[];
+  has_audio?: boolean;
+  audio_url?: string | null;
+  audio_duration?: number | null;
+};
 export type FullBookResponse = {
   book: string;
-  chapters: { chapter: number; verses: BibleVerse[] }[];
+  book_id?: number;
+  language?: string;
+  has_audio?: boolean;
+  audio_info?: {
+    has_audio: boolean;
+    type?: string;
+    book_audio_url?: string | null;
+    book_duration?: number | null;
+    chapters_with_audio?: number;
+  };
+  chapters: FullBookChapter[];
+};
+
+export type AudioProgress = {
+  completed_chapters: number[];
+  current_chapter: number;
+  next_chapter?: number;
+  book_completed: boolean;
+  progress_percentage: number;
 };
 
 export const removeDuplicateVerses = (verses: BibleVerse[]): BibleVerse[] => {
@@ -473,9 +498,16 @@ export const bibleService = {
     }>(`/api/bible/search?q=${encodeURIComponent(q)}&language=${encodeURIComponent(lang)}&limit=${limit}`),
 
   getBooksByLanguage: (lang: string) =>
-    apiClient<{ books: { id: number; name: string; testament: "Old" | "New"; chapters: number }[] }>(
-      `/api/bible/books/by-language?language=${encodeURIComponent(lang)}`
-    ),
+    apiClient<{
+      books: {
+        id: number;
+        name: string;
+        testament: "Old" | "New";
+        chapters: number;
+        has_audio?: boolean;
+        bible_order?: number;
+      }[];
+    }>(`/api/bible/books/by-language?language=${encodeURIComponent(lang)}`),
 
   getBooks: (testament: Testament, lang: string) =>
     apiClient<GetBooksResponse>(
@@ -515,4 +547,17 @@ export const bibleService = {
       })),
     };
   },
+};
+
+// ───────────────────────── Audio Progress ─────────────────────────
+export const audioService = {
+  getProgress: (book_id: number) =>
+    apiClient<{ status: string; data: AudioProgress }>(
+      `/api/user/audio/progress/${book_id}`
+    ),
+  recordCompletion: (book_id: number, chapter: number, lang: string) =>
+    apiClient<{ status: string; data: AudioProgress }>(
+      `/api/audio/record/${book_id}/${chapter}?language=${encodeURIComponent(lang)}`,
+      "POST"
+    ),
 };
