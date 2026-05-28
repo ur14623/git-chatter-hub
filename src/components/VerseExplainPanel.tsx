@@ -20,7 +20,17 @@ export function VerseExplainPanel({
   const { lang } = useI18n();
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  const handleCopy = async () => {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  };
 
   const run = async () => {
     abortRef.current?.abort();
