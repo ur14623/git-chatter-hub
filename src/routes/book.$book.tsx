@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Copy, Check, Loader2, X, Highlighter, Languages, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Copy, Check, Loader2, X, Highlighter, Languages, Sparkles, Volume2, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
-import { bibleService } from "@/services/api";
+import { audioService, bibleService } from "@/services/api";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { findBook, localizedBookName } from "@/data/bible";
 import { VerseComparePanel } from "@/components/VerseComparePanel";
 import { VerseExplainPanel } from "@/components/VerseExplainPanel";
+import { ChapterAudioPlayer } from "@/components/ChapterAudioPlayer";
 
 export const Route = createFileRoute("/book/$book")({
   head: () => ({ meta: [{ title: "Book — Bible" }] }),
