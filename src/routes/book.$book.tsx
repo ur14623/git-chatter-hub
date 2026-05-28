@@ -28,6 +28,7 @@ type PanelTab = "compare" | "explain";
 function BookDetailPage() {
   const { book: slug } = Route.useParams();
   const { lang } = useI18n();
+  const { user } = useAuth();
   const bookName = findBook(slug)?.name ?? slugToBookName(slug);
   const localized = localizedBookName(bookName, lang);
 
