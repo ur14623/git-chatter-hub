@@ -191,21 +191,42 @@ function BookDetailPage() {
                 <div className="flex max-h-[68vh] flex-col gap-1.5 overflow-y-auto pr-1">
                   {chapters.map((c) => {
                     const active = c.chapter === currentChapter?.chapter;
+                    const done = completedChapters.has(c.chapter);
                     return (
                       <button
                         key={c.chapter}
                         onClick={() => setActiveChapter(c.chapter)}
-                        className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                        className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
                           active
                             ? "bg-primary text-primary-foreground shadow-md"
+                            : done
+                            ? "bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-500/20"
                             : "bg-secondary/70 text-foreground hover:bg-primary/10 hover:text-primary"
                         }`}
                       >
-                        Chapter {c.chapter}
+                        <span className="flex items-center gap-1.5">
+                          Chapter {c.chapter}
+                          {c.has_audio && <Volume2 className="h-3 w-3 opacity-70" />}
+                        </span>
+                        {done && <CheckCircle2 className="h-3.5 w-3.5" />}
                       </button>
                     );
                   })}
                 </div>
+                {user && progressQ.data && (
+                  <div className="mt-3 px-1">
+                    <div className="mb-1 flex justify-between text-[10px] font-medium text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{progressPct}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </aside>
 
