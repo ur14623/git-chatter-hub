@@ -548,3 +548,16 @@ export const bibleService = {
     };
   },
 };
+
+// ───────────────────────── Audio Progress ─────────────────────────
+export const audioService = {
+  getProgress: (book_id: number) =>
+    apiClient<{ status: string; data: AudioProgress }>(
+      `/api/user/audio/progress/${book_id}`
+    ),
+  recordCompletion: (book_id: number, chapter: number, lang: string) =>
+    apiClient<{ status: string; data: AudioProgress }>(
+      `/api/audio/record/${book_id}/${chapter}?language=${encodeURIComponent(lang)}`,
+      "POST"
+    ),
+};
