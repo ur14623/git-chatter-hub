@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/api";
 
-export const Route = createFileRoute("/profile/change-password")({
+export const Route = createFileRoute("/profile_/change-password")({
   head: () => ({ meta: [{ title: "Change password — Bible Quiz" }] }),
   component: ChangePassword,
 });

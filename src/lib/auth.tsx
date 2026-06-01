@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { authService, setToken, userService } from "@/services/api";
+import { toast } from "sonner";
+import { authService, setToken, userService, SESSION_EXPIRED_EVENT } from "@/services/api";
+import { syncPendingProgress } from "@/lib/audio-progress";
 
 export type QuizResult = {
   book: string;
@@ -36,6 +38,101 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  // Global handler: backend rejected a call with 401 → session expired.
+  // Log the user out but keep them on whichever page they're on (typically
+  // home) so they can see the login button. Show a popup notification.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Track last user interaction (keyboard, pointer, touch, scroll).
+    let lastInteraction = Date.now();
+    const bump = () => {
+      lastInteraction = Date.now();
+    };
+    const events = ["pointerdown", "keydown", "touchstart", "scroll", "mousemove"];
+    events.forEach((e) =>
+      window.addEventListener(e, bump, { passive: true } as AddEventListenerOptions)
+    );
+
+    // Keep session alive while user is active or audio is playing:
+    // only force-logout when the tab has been idle (no interaction for 15min)
+    // AND no audio is currently playing.
+    const IDLE_MS = 15 * 60 * 1000;
+    const onExpired = () => {
+      const audioPlaying = !!(window as any).__bibleAudioPlaying;
+      const idle = Date.now() - lastInteraction > IDLE_MS;
+      if (audioPlaying || !idle) {
+        // Stay signed in — the user is actively using the app.
+        return;
+      }
+      setUser(null);
+      setToken(null);
+      try {
+        localStorage.removeItem("bible.user");
+      } catch {}
+      toast.error("Your session has expired. Please sign in again.", {
+        duration: 6000,
+      });
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+      events.forEach((e) => window.removeEventListener(e, bump));
+    };
+  }, []);
+
+  // Handle OAuth redirect: backend redirects to /?access_token=...&refresh_token=...&user_id=...
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("access_token");
+    if (!accessToken) return;
+
+    const username = params.get("username") || params.get("display_name") || "";
+    const email = params.get("email") || "";
+    const isAdmin = params.get("is_admin") === "true";
+
+    setToken(accessToken);
+
+    const u: User = {
+      name: username || email.split("@")[0] || "User",
+      email,
+      role: deriveRole({ is_admin: isAdmin }, email),
+    };
+    persist(u);
+    // Backend (Google) login: flush any anonymous progress collected on this device.
+    syncPendingProgress().catch(() => {});
+
+    // Strip auth params from the URL so tokens aren't left in history/shared links
+    const url = new URL(window.location.href);
+    [
+      "access_token",
+      "refresh_token",
+      "user_id",
+      "username",
+      "email",
+      "display_name",
+      "is_admin",
+      "token_type",
+      "expires_at",
+    ].forEach((k) => url.searchParams.delete(k));
+    window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
+
+    // If profile fetch reveals a better username/role, refresh in background
+    userService
+      .getProfile()
+      .then((res) => {
+        const profile: any = res.user;
+        persist({
+          name: profile?.username || u.name,
+          email: profile?.email || u.email,
+          role: deriveRole(profile, profile?.email || u.email),
+        });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const deriveRole = (raw: any, email: string): "admin" | "user" => {
     const r = raw?.role ?? raw?.user_role ?? raw?.type;
     if (r === "admin" || raw?.is_admin) return "admin";
@@ -57,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: deriveRole({ is_admin: res.data?.is_admin }, email),
     };
     persist(u);
+    syncPendingProgress().catch(() => {});
     return u;
   };
 
@@ -71,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: deriveRole({ is_admin: loginRes.data?.is_admin }, email),
     };
     persist(u);
+    syncPendingProgress().catch(() => {});
     return u;
   };
 
@@ -98,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       u = { name: "User", email: "", role: "user" };
     }
     persist(u);
+    syncPendingProgress().catch(() => {});
     return u;
   };
 

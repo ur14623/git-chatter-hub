@@ -19,6 +19,20 @@ export const setToken = (token: string | null) => {
   } catch {}
 };
 
+/** Dispatched whenever the backend rejects a request with 401. */
+export const SESSION_EXPIRED_EVENT = "bible:session-expired";
+let sessionExpiredDispatched = false;
+function notifySessionExpired() {
+  if (sessionExpiredDispatched) return;
+  sessionExpiredDispatched = true;
+  setTimeout(() => {
+    sessionExpiredDispatched = false;
+  }, 5000);
+  try {
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+  } catch {}
+}
+
 export class ApiError extends Error {
   status: number;
   data: unknown;
@@ -46,6 +60,11 @@ export async function apiClient<T>(
   });
 
   const data = await response.json().catch(() => null);
+
+  // Auth expired: tell the app so it can log the user out and notify them.
+  if (response.status === 401 && getToken()) {
+    notifySessionExpired();
+  }
 
   // Some endpoints (e.g. /api/auth/login) return HTTP 200 but with an
   // error envelope: `[{status:"error", message, data}, <httpCode>]`.
@@ -95,11 +114,17 @@ export type DjangoRegisterRes = {
 };
 
 export const authService = {
-  register: (email: string, password: string, username: string) =>
+  register: (
+    email: string,
+    password: string,
+    username: string,
+    confirm_password?: string,
+  ) =>
     apiClient<DjangoRegisterRes>("/api/auth/register", "POST", {
       email,
       password,
       username,
+      confirm_password: confirm_password ?? password,
     }),
   login: (email: string, password: string) =>
     apiClient<DjangoLoginRes>("/api/auth/login", "POST", {
@@ -108,8 +133,42 @@ export const authService = {
     }),
   logout: () =>
     apiClient<{ status: string; message: string }>("/api/auth/logout", "POST"),
-  googleLoginUrl: (redirectUri: string) =>
-    `${API_BASE_URL}/api/auth/google/login?redirect_uri=${encodeURIComponent(redirectUri)}`,
+  forgotPassword: (email: string) =>
+    apiClient<{ status?: string; success?: boolean; message?: string; token?: string; reset_token?: string }>(
+      "/api/auth/forgot-password",
+      "POST",
+      { email }
+    ),
+  resetPassword: (token: string, new_password: string) =>
+    apiClient<{ status?: string; success?: boolean; message?: string }>(
+      "/api/auth/reset-password",
+      "POST",
+      { token, new_password, confirm_password: new_password }
+    ),
+  sendVerificationCode: (email: string) =>
+    apiClient<{ status?: string; success?: boolean; message?: string }>(
+      "/api/auth/send-verification-code",
+      "POST",
+      { email }
+    ),
+  verifyEmail: (email: string, code: string) =>
+    apiClient<{ status?: string; success?: boolean; message?: string }>(
+      "/api/auth/verify-email",
+      "POST",
+      { email, code }
+    ),
+  getGoogleAuthUrl: async () => {
+    const res = await apiClient<{
+      status: string;
+      auth_url: string;
+      redirect_uri: string;
+      client_id: string;
+    }>("/api/auth/google/redirect/");
+    if (res.status !== "success" || !res.auth_url) {
+      throw new ApiError("Failed to get Google auth URL", 400, res);
+    }
+    return res.auth_url;
+  },
 };
 
 // ───────────────────────── User / Profile ─────────────────────────
@@ -152,16 +211,20 @@ export const userService = {
 
   updateProfile: (data: { username?: string; email?: string }) =>
     apiClient<{ success: boolean; message: string; user: UserProfile }>(
-      "/api/users/profile",
+      "/api/user/profile",
       "PUT",
       data
     ),
 
   changePassword: (data: { current_password: string; new_password: string }) =>
     apiClient<{ success: boolean; message: string }>(
-      "/api/users/change-password",
+      "/api/user/change-password",
       "POST",
-      data
+      {
+        old_password: data.current_password,
+        new_password: data.new_password,
+        confirm_password: data.new_password,
+      }
     ),
 
   getStats: () =>
@@ -208,39 +271,23 @@ export type QuizBook = {
   levels: { level_id: number; name: string; question_count: number }[];
 };
 
+/** Options come from the API as {A,B,C,D}; we normalize to array form */
+export type QuizQuestionOption = { label: string; text: string };
+
 export type QuizQuestion = {
   question_id: number;
   text: string;
   verse_reference: string;
-  options: { label: string; text: string }[];
-};
-
-export type QuizAttempt = {
-  attempt_id: number;
-  book_id: number;
-  level_id: number;
-  language_id: number;
-  total_questions: number;
-  current_question_number: number;
-  status: string;
+  options: QuizQuestionOption[];
 };
 
 export type AnswerResult = {
   is_correct: boolean;
-  selected_option: string;
   correct_option: { label: string; text: string };
   verse_reference?: string;
   verse_text?: string;
   explanation?: string;
-  progress: { current: number; total: number; remaining: number };
-  next_available: boolean;
-  quiz_completed?: boolean;
-  final_score?: {
-    score_percentage: number;
-    correct_answers: number;
-    wrong_answers: number;
-    total_questions: number;
-  };
+  progress: { answered: number; total: number; remaining: number };
 };
 
 export type QuizLevel = {
@@ -250,7 +297,80 @@ export type QuizLevel = {
   description: string;
   color: string;
   icon: string;
+  total_questions?: number;
 };
+
+export type QuizStartResult = {
+  attempt_id: number;
+  book: { id: number; name: string };
+  level: { id: number; name: string };
+  total_questions: number;
+  first_question: QuizQuestion;
+  started_at?: string;
+};
+
+export type QuizNextResult =
+  | {
+      attempt_id: number;
+      question_number: number;
+      total_questions: number;
+      remaining_questions: number;
+      question: QuizQuestion;
+    }
+  | { completed: true; message: string; review_url?: string };
+
+export type QuizFinishResult = {
+  attempt_id: number;
+  results: {
+    total_questions: number;
+    correct_answers: number;
+    incorrect_answers: number;
+    score_percentage: number;
+    time_taken?: string;
+  };
+};
+
+export type QuizReviewResult = {
+  attempt_id: number;
+  summary: {
+    total: number;
+    correct: number;
+    incorrect: number;
+    score: number;
+  };
+  answers: {
+    question_number: number;
+    question_text: string;
+    user_answer: string;
+    correct_answer: string;
+    correct_answer_text?: string;
+    is_correct: boolean;
+    explanation?: string;
+    verse_reference?: string;
+  }[];
+};
+
+// Normalize options shape: API may return either {A:"...",B:"..."} or [{label,text}]
+function normalizeOptions(opts: unknown): QuizQuestionOption[] {
+  if (!opts) return [];
+  if (Array.isArray(opts)) return opts as QuizQuestionOption[];
+  if (typeof opts === "object") {
+    return Object.entries(opts as Record<string, string>).map(([label, text]) => ({
+      label,
+      text,
+    }));
+  }
+  return [];
+}
+
+function normalizeQuestion(q: any): QuizQuestion {
+  return {
+    question_id: q.question_id ?? q.id,
+    text: q.text,
+    verse_reference: q.verse_reference ?? "",
+    options: normalizeOptions(q.options),
+  };
+}
 
 export const quizService = {
   getLanguages: () =>
@@ -259,74 +379,100 @@ export const quizService = {
   getBooks: () =>
     apiClient<{ success: boolean; data: QuizBook[] }>("/api/quiz/books"),
 
-  getLevels: (book_id: number) =>
-    apiClient<{
+  getLevels: async (book_id: number) => {
+    const res = await apiClient<{
       success: boolean;
-      data: { book_id: number; book_name: string; levels: QuizLevel[] };
-    }>(`/api/quiz/books/${book_id}/levels`),
+      data: { book_id: number; book_name: string; levels: any[] };
+    }>(`/api/quiz/books/${book_id}/levels`);
+    // Normalize: spec uses {id, name, total_questions}; existing UI uses level_id/level_number/...
+    const levels: QuizLevel[] = (res.data?.levels ?? []).map((l: any, i: number) => ({
+      level_id: l.level_id ?? l.id,
+      level_number: l.level_number ?? l.id ?? i + 1,
+      name: l.name,
+      description: l.description ?? `${l.total_questions ?? l.question_count ?? ""} questions`,
+      color: l.color ?? ["#10b981", "#f59e0b", "#ef4444"][i % 3],
+      icon: l.icon ?? ["🌱", "⚡", "🔥"][i % 3],
+      total_questions: l.total_questions ?? l.question_count,
+    }));
+    return { success: res.success, data: { ...res.data, levels } };
+  },
 
-  start: (book_id: number, level_id: number, language_id: number) =>
-    apiClient<{ success: boolean; data: QuizAttempt }>(
-      "/api/quiz/quiz/start",
+  start: async (book_id: number, level_id: number, language_id: number) => {
+    const res = await apiClient<{ success: boolean; data: any }>(
+      "/api/quiz/start",
       "POST",
       { book_id, level_id, language_id }
-    ),
+    );
+    const d = res.data ?? {};
+    const result: QuizStartResult = {
+      attempt_id: d.attempt_id,
+      book: d.book ?? { id: book_id, name: "" },
+      level: d.level ?? { id: level_id, name: "" },
+      total_questions: d.total_questions,
+      first_question: d.first_question ? normalizeQuestion(d.first_question) : (undefined as any),
+      started_at: d.started_at,
+    };
+    return { success: res.success, data: result };
+  },
 
-  next: (attempt_id: number) =>
-    apiClient<{
-      success: boolean;
-      data:
-        | {
-            attempt_id: number;
-            question_number: number;
-            remaining_questions: number;
-            question: QuizQuestion;
-          }
-        | { completed: true; message: string };
-    }>(`/api/quiz/quiz/${attempt_id}/next`),
+  next: async (attempt_id: number) => {
+    const res = await apiClient<{ success: boolean; data: any }>(
+      `/api/quiz/${attempt_id}/next`
+    );
+    const d = res.data ?? {};
+    let data: QuizNextResult;
+    if (d.completed) {
+      data = { completed: true, message: d.message ?? "", review_url: d.review_url };
+    } else {
+      const total = d.total_questions ?? (d.progress?.answered ?? 0) + (d.progress?.remaining ?? 0);
+      data = {
+        attempt_id: d.attempt_id ?? attempt_id,
+        question_number: d.question_number,
+        total_questions: total,
+        remaining_questions: d.progress?.remaining ?? Math.max(0, total - d.question_number),
+        question: normalizeQuestion(d.question),
+      };
+    }
+    return { success: res.success, data };
+  },
 
-  answer: (attempt_id: number, question_id: number, selected_option: string) =>
-    apiClient<{ success: boolean; data: AnswerResult }>(
-      "/api/quiz/quiz/answer",
+  answer: async (
+    attempt_id: number,
+    question_id: number,
+    selected_option: string
+  ) => {
+    const res = await apiClient<{ success: boolean; data: any }>(
+      "/api/quiz/answer",
       "POST",
       { attempt_id, question_id, selected_option }
-    ),
+    );
+    const d = res.data ?? {};
+    // correct_option may be a string letter; wrap to {label,text}
+    const correct =
+      typeof d.correct_option === "string"
+        ? { label: d.correct_option, text: "" }
+        : d.correct_option ?? { label: "", text: "" };
+    const data: AnswerResult = {
+      is_correct: !!d.is_correct,
+      correct_option: correct,
+      verse_reference: d.verse_reference,
+      verse_text: d.verse_text,
+      explanation: d.explanation,
+      progress: d.progress ?? { answered: 0, total: 0, remaining: 0 },
+    };
+    return { success: res.success, data };
+  },
 
   finish: (attempt_id: number) =>
-    apiClient<{
-      success: boolean;
-      data: {
-        attempt_id: number;
-        score_percentage: number;
-        correct_answers: number;
-        wrong_answers: number;
-        total_questions: number;
-        status: string;
-      };
-    }>(`/api/quiz/quiz/${attempt_id}/finish`, "POST"),
+    apiClient<{ success: boolean; data: QuizFinishResult }>(
+      `/api/quiz/${attempt_id}/finish`,
+      "POST"
+    ),
 
   review: (attempt_id: number) =>
-    apiClient<{
-      success: boolean;
-      data: {
-        attempt_id: number;
-        summary: {
-          score_percentage: number;
-          correct_answers: number;
-          wrong_answers: number;
-          total_questions: number;
-        };
-        questions: {
-          question_id: number;
-          question: string;
-          selected_option: string;
-          correct_option: string;
-          is_correct: boolean;
-          verse_reference: string;
-          explanation: string;
-        }[];
-      };
-    }>(`/api/quiz/quiz/${attempt_id}/review`),
+    apiClient<{ success: boolean; data: QuizReviewResult }>(
+      `/api/quiz/${attempt_id}/review`
+    ),
 };
 
 // ───────────────────────── Bible (existing) ─────────────────────────
@@ -355,9 +501,103 @@ export type VerseResponse = {
   language: string;
   status: string;
 };
+export type FullBookChapter = {
+  chapter: number;
+  verses: BibleVerse[];
+  has_audio?: boolean;
+  audio_url?: string | null;
+  audio_duration?: number | null;
+};
 export type FullBookResponse = {
   book: string;
-  chapters: { chapter: number; verses: BibleVerse[] }[];
+  book_id?: number;
+  language?: string;
+  has_audio?: boolean;
+  audio_info?: {
+    has_audio: boolean;
+    type?: string;
+    book_audio_url?: string | null;
+    book_duration?: number | null;
+    chapters_with_audio?: number;
+  };
+  chapters: FullBookChapter[];
+};
+
+export type AudioProgress = {
+  book_id?: number;
+  book_name?: string;
+  testament?: Testament;
+  current_chapter: number;
+  current_verse?: number;
+  audio_current_position?: number;
+  audio_completed_chapters?: number[];
+  total_audio_duration?: number;
+  listened_audio_duration?: number;
+  remaining_audio_duration?: number;
+  audio_progress_percentage?: number;
+  completed_chapters?: number[];
+  next_chapter?: number;
+  book_completed?: boolean;
+  completed?: boolean;
+  progress_percentage: number;
+};
+
+export type AudioProgressUpdate = {
+  book_id: number;
+  book_name: string;
+  testament: Testament;
+  success: boolean;
+  current_chapter: number;
+  current_position: number;
+  audio_completed_chapters: number[];
+  audio_progress_percentage: number;
+  total_audio_duration: number;
+  listened_audio_duration: number;
+  remaining_audio_duration: number;
+};
+
+export type QuizProgress = {
+  book_id: number;
+  book_name: string;
+  testament: Testament;
+  total_quizzes_taken: number;
+  completed_quizzes: number;
+  in_progress_attempt_id: number | null;
+  status: "in_progress" | "completed" | "abandoned" | null;
+  total_questions: number;
+  answered_questions: number;
+  correct_answers: number;
+  score_percentage: number;
+  progress_percentage: number;
+  can_resume: boolean;
+  resume_data: { current_question_index?: number; current_index?: number } | null;
+  last_attempt_at: string | null;
+};
+
+export type BookProgressEntry = {
+  book_id: number;
+  book_name: string;
+  testament: Testament;
+  current_chapter: number;
+  current_verse: number;
+  questions_answered: number;
+  correct_answers: number;
+  audio_started: boolean;
+  audio_can_resume: boolean;
+  audio_current_position: number;
+  audio_completed_chapters: number[];
+  audio_progress_percentage: number;
+  total_audio_chapters: number;
+  quiz_in_progress: boolean;
+  quiz_resume_attempt_id: number | null;
+  quiz_resume_status: "in_progress" | "completed" | "abandoned" | null;
+  quiz_resume_total_questions: number;
+  quiz_resume_answered_questions: number;
+  quiz_resume_correct_answers: number;
+  quiz_resume_score_percentage: number;
+  quiz_resume_progress_percentage: number;
+  last_activity: string | null;
+  completed: boolean;
 };
 
 export const removeDuplicateVerses = (verses: BibleVerse[]): BibleVerse[] => {
@@ -390,9 +630,16 @@ export const bibleService = {
     }>(`/api/bible/search?q=${encodeURIComponent(q)}&language=${encodeURIComponent(lang)}&limit=${limit}`),
 
   getBooksByLanguage: (lang: string) =>
-    apiClient<{ books: { id: number; name: string; testament: "Old" | "New"; chapters: number }[] }>(
-      `/api/bible/books/by-language?language=${encodeURIComponent(lang)}`
-    ),
+    apiClient<{
+      books: {
+        id: number;
+        name: string;
+        testament: "Old" | "New";
+        chapters: number;
+        has_audio?: boolean;
+        bible_order?: number;
+      }[];
+    }>(`/api/bible/books/by-language?language=${encodeURIComponent(lang)}`),
 
   getBooks: (testament: Testament, lang: string) =>
     apiClient<GetBooksResponse>(
@@ -432,4 +679,42 @@ export const bibleService = {
       })),
     };
   },
+};
+
+// ───────────────────────── Audio Progress ─────────────────────────
+export const audioService = {
+  getProgress: (book_id: number) =>
+    apiClient<{ status: string; data: AudioProgress }>(
+      `/api/user/audio/progress/${book_id}`
+    ),
+  updateProgress: (
+    book_id: number,
+    payload: { chapter_number: number; current_position?: number; completed_chapter?: number }
+  ) =>
+    apiClient<{ status: string; data: AudioProgressUpdate }>(
+      `/api/user/audio/progress/${book_id}/update`,
+      "POST",
+      payload
+    ),
+  recordCompletion: (book_id: number, chapter: number, lang: string) =>
+    apiClient<{ status: string; data: AudioProgress }>(
+      `/api/audio/record/${book_id}/${chapter}?language=${encodeURIComponent(lang)}`,
+      "POST"
+    ),
+};
+
+// ───────────────────────── Quiz Progress ─────────────────────────
+export const quizProgressService = {
+  getForBook: (book_id: number) =>
+    apiClient<{ status: string; data: QuizProgress }>(
+      `/api/user/quiz-progress/${book_id}`
+    ),
+};
+
+// ───────────────────────── Combined Book Progress ─────────────────────────
+export const bookProgressService = {
+  getAll: () =>
+    apiClient<{ status: string; data: BookProgressEntry[] }>(
+      `/api/user/book-progress`
+    ),
 };

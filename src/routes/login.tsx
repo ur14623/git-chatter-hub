@@ -11,17 +11,22 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleGoogle = () => {
-    const redirectUri = `${window.location.origin}/auth/google-callback`;
-    window.location.href = authService.googleLoginUrl(redirectUri);
+  const handleGoogle = async () => {
+    try {
+      const authUrl = await authService.getGoogleAuthUrl();
+      window.location.href = authUrl;
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to initiate Google login");
+    }
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -29,12 +34,29 @@ function LoginPage() {
     if (!email || !password) return;
     setLoading(true);
     try {
-      const u =
-        mode === "login"
-          ? await login(email, password)
-          : await register(username || email.split("@")[0], email, password);
-      toast.success(mode === "login" ? "Welcome back" : "Account created");
-      navigate({ to: u.role === "admin" ? "/admin" : "/" });
+      if (mode === "login") {
+        const u = await login(email, password);
+        toast.success("Welcome back");
+        navigate({ to: u.role === "admin" ? "/admin" : "/" });
+      } else {
+        if (password !== confirmPassword) {
+          toast.error("Passwords do not match");
+          setLoading(false);
+          return;
+        }
+        // Register but do NOT auto-login — require email verification first.
+        await authService.register(
+          email,
+          password,
+          username || email.split("@")[0],
+          confirmPassword,
+        );
+        try {
+          await authService.sendVerificationCode(email);
+        } catch {}
+        toast.success("Account created. Check your email to verify your address.");
+        navigate({ to: "/verify-email", search: { email } as any });
+      }
     } catch (err: any) {
       toast.error(err?.message || "Authentication failed");
     } finally {
@@ -107,6 +129,18 @@ function LoginPage() {
               placeholder="••••••••"
             />
           </div>
+          {mode === "register" && (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Confirm password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                placeholder="••••••••"
+              />
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -115,6 +149,13 @@ function LoginPage() {
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {mode === "login" ? "Login" : "Create account"}
           </button>
+          {mode === "login" && (
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+          )}
         </form>
         {mode === "register" && (
           <p className="mt-3 text-center text-[11px] text-muted-foreground">

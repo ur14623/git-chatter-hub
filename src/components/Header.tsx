@@ -3,6 +3,7 @@ import { BookOpen, User as UserIcon, LogOut, Globe, Check } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useI18n, LANGS } from "@/lib/i18n";
+import { SettingsMenu } from "@/components/SettingsMenu";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -18,12 +19,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+      <div className="flex h-16 max-w-none items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 font-serif text-lg font-semibold text-foreground">
           <BookOpen className="h-5 w-5 text-primary" />
           {t.appName}
         </Link>
         <div className="flex items-center gap-2">
+          <SettingsMenu />
           <div className="relative">
             <button
               onClick={() => setLangOpen((o) => !o)}
@@ -44,7 +46,7 @@ export function Header() {
                       setLang(l.code);
                       setLangOpen(false);
                     }}
-                    className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm text-popover-foreground hover:bg-secondary"
+                    className="flex w-full items-center justify-center gap-2 px-4 py-2 text-center text-sm text-popover-foreground hover:bg-secondary sm:justify-between sm:text-left"
                   >
                     <span>
                       <span className="font-medium">{l.native}</span>
@@ -65,7 +67,7 @@ export function Header() {
               <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground text-xs">
                 {user.name[0]}
               </span>
-              {user.name}
+              <span className="hidden sm:inline">{user.name}</span>
             </button>
           ) : (
             <Link
@@ -77,7 +79,7 @@ export function Header() {
           )}
           {user && open && (
             <div className="absolute right-0 mt-2 w-48 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
-              <Link to="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-popover-foreground hover:bg-secondary">
+              <Link to="/profile" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-popover-foreground hover:bg-secondary sm:justify-start">
                 <UserIcon className="h-4 w-4" /> Profile
               </Link>
               <button
@@ -85,7 +87,7 @@ export function Header() {
                   setOpen(false);
                   logout();
                 }}
-                className="flex w-full items-center gap-2 border-t border-border px-4 py-2 text-left text-sm text-popover-foreground hover:bg-secondary"
+                className="flex w-full items-center justify-center gap-2 border-t border-border px-4 py-2 text-center text-sm text-popover-foreground hover:bg-secondary sm:justify-start sm:text-left"
               >
                 <LogOut className="h-4 w-4" /> {t.logout}
               </button>

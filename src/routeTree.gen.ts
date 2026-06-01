@@ -9,12 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReadingProgressRouteImport } from './routes/reading-progress'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -23,16 +26,22 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ReadBookRouteImport } from './routes/read.$book'
 import { Route as QuizBookRouteImport } from './routes/quiz.$book'
 import { Route as QuizSetupBookRouteImport } from './routes/quiz-setup.$book'
-import { Route as ProfileEditRouteImport } from './routes/profile.edit'
-import { Route as ProfileChangePasswordRouteImport } from './routes/profile.change-password'
+import { Route as ProfileEditRouteImport } from './routes/profile_.edit'
+import { Route as ProfileChangePasswordRouteImport } from './routes/profile_.change-password'
 import { Route as BookBookRouteImport } from './routes/book.$book'
 import { Route as AuthGoogleCallbackRouteImport } from './routes/auth.google-callback'
+import { Route as ApiVerseExplainRouteImport } from './routes/api/verse-explain'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminQuestionsImportRouteImport } from './routes/admin.questions-import'
 import { Route as AdminLanguagesRouteImport } from './routes/admin.languages'
 import { Route as AdminBooksRouteImport } from './routes/admin.books'
 import { Route as AdminBibleImportRouteImport } from './routes/admin.bible-import'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatisticsRoute = StatisticsRouteImport.update({
   id: '/statistics',
   path: '/statistics',
@@ -41,6 +50,11 @@ const StatisticsRoute = StatisticsRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReadingProgressRoute = ReadingProgressRouteImport.update({
@@ -61,6 +75,11 @@ const LoginRoute = LoginRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -104,14 +123,14 @@ const QuizSetupBookRoute = QuizSetupBookRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile_/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileChangePasswordRoute = ProfileChangePasswordRouteImport.update({
-  id: '/change-password',
-  path: '/change-password',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile_/change-password',
+  path: '/profile/change-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BookBookRoute = BookBookRouteImport.update({
   id: '/book/$book',
@@ -121,6 +140,11 @@ const BookBookRoute = BookBookRouteImport.update({
 const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
   id: '/auth/google-callback',
   path: '/auth/google-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVerseExplainRoute = ApiVerseExplainRouteImport.update({
+  id: '/api/verse-explain',
+  path: '/api/verse-explain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -154,17 +178,21 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/reading-progress': typeof ReadingProgressRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/statistics': typeof StatisticsRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/bible-import': typeof AdminBibleImportRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/questions-import': typeof AdminQuestionsImportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/verse-explain': typeof ApiVerseExplainRoute
   '/auth/google-callback': typeof AuthGoogleCallbackRoute
   '/book/$book': typeof BookBookRoute
   '/profile/change-password': typeof ProfileChangePasswordRoute
@@ -178,17 +206,21 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/reading-progress': typeof ReadingProgressRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/statistics': typeof StatisticsRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/bible-import': typeof AdminBibleImportRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/questions-import': typeof AdminQuestionsImportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/verse-explain': typeof ApiVerseExplainRoute
   '/auth/google-callback': typeof AuthGoogleCallbackRoute
   '/book/$book': typeof BookBookRoute
   '/profile/change-password': typeof ProfileChangePasswordRoute
@@ -204,21 +236,25 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/reading-progress': typeof ReadingProgressRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/search': typeof SearchRoute
   '/statistics': typeof StatisticsRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/bible-import': typeof AdminBibleImportRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/languages': typeof AdminLanguagesRoute
   '/admin/questions-import': typeof AdminQuestionsImportRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/verse-explain': typeof ApiVerseExplainRoute
   '/auth/google-callback': typeof AuthGoogleCallbackRoute
   '/book/$book': typeof BookBookRoute
-  '/profile/change-password': typeof ProfileChangePasswordRoute
-  '/profile/edit': typeof ProfileEditRoute
+  '/profile_/change-password': typeof ProfileChangePasswordRoute
+  '/profile_/edit': typeof ProfileEditRoute
   '/quiz-setup/$book': typeof QuizSetupBookRoute
   '/quiz/$book': typeof QuizBookRoute
   '/read/$book': typeof ReadBookRoute
@@ -231,17 +267,21 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/forgot-password'
     | '/history'
     | '/login'
     | '/profile'
     | '/reading-progress'
+    | '/reset-password'
     | '/search'
     | '/statistics'
+    | '/verify-email'
     | '/admin/bible-import'
     | '/admin/books'
     | '/admin/languages'
     | '/admin/questions-import'
     | '/admin/users'
+    | '/api/verse-explain'
     | '/auth/google-callback'
     | '/book/$book'
     | '/profile/change-password'
@@ -255,17 +295,21 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/dashboard'
+    | '/forgot-password'
     | '/history'
     | '/login'
     | '/profile'
     | '/reading-progress'
+    | '/reset-password'
     | '/search'
     | '/statistics'
+    | '/verify-email'
     | '/admin/bible-import'
     | '/admin/books'
     | '/admin/languages'
     | '/admin/questions-import'
     | '/admin/users'
+    | '/api/verse-explain'
     | '/auth/google-callback'
     | '/book/$book'
     | '/profile/change-password'
@@ -280,21 +324,25 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/forgot-password'
     | '/history'
     | '/login'
     | '/profile'
     | '/reading-progress'
+    | '/reset-password'
     | '/search'
     | '/statistics'
+    | '/verify-email'
     | '/admin/bible-import'
     | '/admin/books'
     | '/admin/languages'
     | '/admin/questions-import'
     | '/admin/users'
+    | '/api/verse-explain'
     | '/auth/google-callback'
     | '/book/$book'
-    | '/profile/change-password'
-    | '/profile/edit'
+    | '/profile_/change-password'
+    | '/profile_/edit'
     | '/quiz-setup/$book'
     | '/quiz/$book'
     | '/read/$book'
@@ -306,14 +354,20 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   HistoryRoute: typeof HistoryRoute
   LoginRoute: typeof LoginRoute
-  ProfileRoute: typeof ProfileRouteWithChildren
+  ProfileRoute: typeof ProfileRoute
   ReadingProgressRoute: typeof ReadingProgressRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SearchRoute: typeof SearchRoute
   StatisticsRoute: typeof StatisticsRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiVerseExplainRoute: typeof ApiVerseExplainRoute
   AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
   BookBookRoute: typeof BookBookRoute
+  ProfileChangePasswordRoute: typeof ProfileChangePasswordRoute
+  ProfileEditRoute: typeof ProfileEditRoute
   QuizSetupBookRoute: typeof QuizSetupBookRoute
   QuizBookRoute: typeof QuizBookRoute
   ReadBookRoute: typeof ReadBookRoute
@@ -321,6 +375,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/statistics': {
       id: '/statistics'
       path: '/statistics'
@@ -333,6 +394,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reading-progress': {
@@ -361,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -419,19 +494,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizSetupBookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile/edit': {
-      id: '/profile/edit'
-      path: '/edit'
+    '/profile_/edit': {
+      id: '/profile_/edit'
+      path: '/profile/edit'
       fullPath: '/profile/edit'
       preLoaderRoute: typeof ProfileEditRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
-    '/profile/change-password': {
-      id: '/profile/change-password'
-      path: '/change-password'
+    '/profile_/change-password': {
+      id: '/profile_/change-password'
+      path: '/profile/change-password'
       fullPath: '/profile/change-password'
       preLoaderRoute: typeof ProfileChangePasswordRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
     '/book/$book': {
       id: '/book/$book'
@@ -445,6 +520,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/google-callback'
       fullPath: '/auth/google-callback'
       preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/verse-explain': {
+      id: '/api/verse-explain'
+      path: '/api/verse-explain'
+      fullPath: '/api/verse-explain'
+      preLoaderRoute: typeof ApiVerseExplainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
@@ -505,32 +587,25 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface ProfileRouteChildren {
-  ProfileChangePasswordRoute: typeof ProfileChangePasswordRoute
-  ProfileEditRoute: typeof ProfileEditRoute
-}
-
-const ProfileRouteChildren: ProfileRouteChildren = {
-  ProfileChangePasswordRoute: ProfileChangePasswordRoute,
-  ProfileEditRoute: ProfileEditRoute,
-}
-
-const ProfileRouteWithChildren =
-  ProfileRoute._addFileChildren(ProfileRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   HistoryRoute: HistoryRoute,
   LoginRoute: LoginRoute,
-  ProfileRoute: ProfileRouteWithChildren,
+  ProfileRoute: ProfileRoute,
   ReadingProgressRoute: ReadingProgressRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SearchRoute: SearchRoute,
   StatisticsRoute: StatisticsRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
+  ApiVerseExplainRoute: ApiVerseExplainRoute,
   AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   BookBookRoute: BookBookRoute,
+  ProfileChangePasswordRoute: ProfileChangePasswordRoute,
+  ProfileEditRoute: ProfileEditRoute,
   QuizSetupBookRoute: QuizSetupBookRoute,
   QuizBookRoute: QuizBookRoute,
   ReadBookRoute: ReadBookRoute,
@@ -538,13 +613,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

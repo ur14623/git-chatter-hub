@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { BookMarked, Play, PlayCircle, KeyRound, Pencil } from "lucide-react";
+import { BookMarked, Play, PlayCircle, KeyRound, Pencil, Headphones } from "lucide-react";
 import { ProtectedPage, StatCard, SectionCard } from "@/components/ProtectedPage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { userService } from "@/services/api";
+import { bookProgressService, userService } from "@/services/api";
+import { bookSlug } from "@/data/bible";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/profile")({
@@ -36,6 +37,12 @@ function ProfilePage() {
     queryFn: () => userService.getInProgressQuizzes(),
     enabled: !!user,
   });
+  const bookProgressQ = useQuery({
+    queryKey: ["user", "book-progress"],
+    queryFn: () => bookProgressService.getAll(),
+    enabled: !!user,
+  });
+  const bookProgress = bookProgressQ.data?.data ?? [];
 
   const p: any = profileQ.data?.user;
   const s: any = statsQ.data?.stats ?? {};
@@ -69,6 +76,7 @@ function ProfilePage() {
 
   return (
     <ProtectedPage>
+      <div className="px-[5%]">
       <h1 className="mb-1 font-serif text-3xl font-semibold text-foreground">
         Welcome back, {p?.username ?? user?.name}
       </h1>
@@ -138,7 +146,7 @@ function ProfilePage() {
         {historyQ.isLoading ? (
           <Skeleton className="h-32" />
         ) : allBooks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No completed quizzes yet.</p>
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">No completed quizzes yet.</p>
         ) : (
           <ul className="space-y-3">
             {Object.entries(byBook).map(([book, list]) => {
@@ -173,6 +181,120 @@ function ProfilePage() {
         </div>
       </SectionCard>
 
+      {/* Audio progress per book */}
+      <SectionCard title={`Audio progress (${bookProgress.length})`}>
+        {bookProgressQ.isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        ) : bookProgress.length === 0 ? (
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+            Listen to a chapter to start tracking audio progress here.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {bookProgress.map((b) => {
+              const slug = bookSlug(b.book_name);
+              const pct = Math.round(b.audio_progress_percentage ?? 0);
+              return (
+                <li
+                  key={`audio-${b.book_id}`}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-border p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-foreground">{b.book_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {b.testament} Testament
+                      {b.last_activity
+                        ? ` · ${new Date(b.last_activity).toLocaleDateString()}`
+                        : ""}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Progress value={pct} className="h-1.5" />
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        {pct}%
+                        {b.total_audio_chapters
+                          ? ` · ${b.audio_completed_chapters?.length ?? 0}/${b.total_audio_chapters} ch`
+                          : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    to="/book/$book"
+                    params={{ book: slug }}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+                  >
+                    <Headphones className="h-3.5 w-3.5" />
+                    {b.audio_can_resume ? "Resume" : "Listen"}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionCard>
+
+      {/* Quiz progress per book */}
+      <SectionCard title={`Quiz progress (${bookProgress.length})`}>
+        {bookProgressQ.isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        ) : bookProgress.length === 0 ? (
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+            Take a quiz to start tracking quiz progress here.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {bookProgress.map((b) => {
+              const slug = bookSlug(b.book_name);
+              const pct = Math.round(b.quiz_resume_progress_percentage ?? 0);
+              const started = (b.quiz_resume_total_questions ?? 0) > 0;
+              return (
+                <li
+                  key={`quiz-${b.book_id}`}
+                  className="flex items-center justify-between gap-4 rounded-xl border border-border p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-foreground">{b.book_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {b.testament} Testament
+                      {b.last_activity
+                        ? ` · ${new Date(b.last_activity).toLocaleDateString()}`
+                        : ""}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Progress value={pct} className="h-1.5" />
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        {started
+                          ? `${b.quiz_resume_answered_questions}/${b.quiz_resume_total_questions} · ${Math.round(b.quiz_resume_score_percentage ?? 0)}%`
+                          : "Not started"}
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    to="/quiz-setup/$book"
+                    params={{ book: slug }}
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
+                      b.quiz_in_progress
+                        ? "bg-primary text-primary-foreground hover:opacity-90"
+                        : "border border-border bg-card text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <PlayCircle className="h-3.5 w-3.5" />
+                    {b.quiz_in_progress ? "Resume" : started ? "Continue" : "Take quiz"}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionCard>
+
+
+
       {/* In-progress quizzes */}
       <SectionCard title={`In progress quizzes (${quizzes.length})`}>
         {inProgress.isLoading ? (
@@ -181,7 +303,7 @@ function ProfilePage() {
             <Skeleton className="h-16" />
           </div>
         ) : quizzes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
             No quizzes in progress. Start one to see it here.
           </p>
         ) : (
@@ -254,7 +376,7 @@ function ProfilePage() {
             ))}
           </div>
         ) : filteredHistory.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No quizzes yet. Take one to see it here.</p>
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">No quizzes yet. Take one to see it here.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -296,6 +418,7 @@ function ProfilePage() {
           </div>
         )}
       </SectionCard>
+      </div>
     </ProtectedPage>
   );
 }

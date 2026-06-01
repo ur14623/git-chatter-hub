@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { userService } from "@/services/api";
 
-export const Route = createFileRoute("/profile/edit")({
+export const Route = createFileRoute("/profile_/edit")({
   head: () => ({ meta: [{ title: "Edit profile — Bible Quiz" }] }),
   component: EditProfile,
 });
