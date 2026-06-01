@@ -1,11 +1,8 @@
 import { apiClient } from "./api";
 
 /**
- * Admin service.
- *
- * NOTE: The backend admin endpoints below follow a conventional pattern
- * (/api/admin/...). If your backend exposes different paths, update these
- * URLs in one place — the UI will work as soon as the endpoints respond.
+ * Admin service — matches the backend admin API spec.
+ * Base path: /api/admin
  */
 
 export type AdminUser = {
@@ -13,119 +10,153 @@ export type AdminUser = {
   username: string;
   email: string;
   created_at: string;
-  total_quizzes_taken: number;
+  last_login?: string | null;
   is_active: boolean;
-  role?: "admin" | "user";
+  is_admin: boolean;
+  total_quizzes_taken?: number;
+  total_correct_answers?: number;
+  total_questions_answered?: number;
 };
 
 export type AdminLanguage = {
-  language_id: number;
+  id: number;
   code: string;
   name: string;
-  native_name: string;
+  native_name: string | null;
   is_active: boolean;
-  questions_count?: number;
+  created_at?: string;
 };
 
 export type AdminBook = {
-  book_id: number;
+  id: number;
   name: string;
   testament: "Old" | "New";
-  chapters_count: number;
-  verses_count: number;
-  questions_count: number;
-  difficulty_breakdown?: { easy: number; medium: number; hard: number };
+  chapters: number;
+  verses: number;
 };
 
-export type AdminActivity = {
-  id: number;
-  type: "user_registered" | "quiz_completed" | "questions_added" | string;
-  message: string;
-  created_at: string;
-};
-
-export type AdminStats = {
+export type AdminUserStats = {
   total_users: number;
-  total_languages: number;
-  total_books: number;
+  total_quizzes: number;
   total_questions: number;
+  total_correct: number;
+  avg_quizzes_per_user: number;
 };
+
+export type AdminUserProgress = {
+  quiz_attempts: Array<{
+    id: number;
+    book_name: string;
+    questions_count: number;
+    correct_answers: number;
+    taken_at: string;
+    score: number;
+  }>;
+  book_progress: Array<{
+    book_id: number;
+    book_name: string;
+    total_questions: number;
+    answered_correctly: number;
+    progress: number;
+  }>;
+  total_quizzes: number;
+  total_books_progress: number;
+};
+
+type Envelope<T> = { success: boolean; data: T; message?: string };
 
 export const adminService = {
-  // Dashboard
-  getStats: () => apiClient<{ success: boolean; stats: AdminStats }>("/api/admin/stats"),
-  getActivity: (limit = 10) =>
-    apiClient<{ success: boolean; activities: AdminActivity[] }>(
-      `/api/admin/activity?limit=${limit}`
-    ),
-
   // Users
-  listUsers: (params: { search?: string; status?: "active" | "inactive" | "all"; page?: number; limit?: number } = {}) => {
+  listUsers: (params: { limit?: number; offset?: number } = {}) => {
     const q = new URLSearchParams();
-    if (params.search) q.set("search", params.search);
-    if (params.status && params.status !== "all") q.set("status", params.status);
-    q.set("page", String(params.page ?? 1));
-    q.set("limit", String(params.limit ?? 20));
-    return apiClient<{ success: boolean; users: AdminUser[]; total: number; page: number; limit: number }>(
+    q.set("limit", String(params.limit ?? 100));
+    q.set("offset", String(params.offset ?? 0));
+    return apiClient<Envelope<{ users: AdminUser[]; total: number; limit: number; offset: number }>>(
       `/api/admin/users?${q.toString()}`
     );
   },
+  getUserStats: () =>
+    apiClient<Envelope<AdminUserStats>>("/api/admin/users/stats"),
   getUser: (id: number) =>
-    apiClient<{ success: boolean; user: AdminUser; quiz_history: any[] }>(`/api/admin/users/${id}`),
-  createUser: (data: { username: string; email: string; password: string }) =>
-    apiClient<{ success: boolean; user: AdminUser }>("/api/admin/users", "POST", data),
-  updateUser: (id: number, data: Partial<{ username: string; email: string; is_active: boolean }>) =>
-    apiClient<{ success: boolean; user: AdminUser }>(`/api/admin/users/${id}`, "PUT", data),
+    apiClient<Envelope<AdminUser>>(`/api/admin/users/${id}`),
   setUserActive: (id: number, is_active: boolean) =>
-    apiClient<{ success: boolean }>(`/api/admin/users/${id}/status`, "PUT", { is_active }),
+    apiClient<{ success: boolean; message: string }>(
+      `/api/admin/users/${id}`,
+      "PUT",
+      { is_active }
+    ),
+  setUserAdmin: (id: number, is_admin: boolean) =>
+    apiClient<{ success: boolean; message: string }>(
+      `/api/admin/users/${id}/admin`,
+      "PUT",
+      { is_admin }
+    ),
+  getUserProgress: (id: number) =>
+    apiClient<Envelope<AdminUserProgress>>(`/api/admin/users/${id}/progress`),
+
+  // Books
+  listBooks: (params: { testament?: "Old" | "New" | "all" } = {}) => {
+    const q = new URLSearchParams();
+    if (params.testament && params.testament !== "all") q.set("testament", params.testament);
+    const qs = q.toString();
+    return apiClient<Envelope<AdminBook[]>>(`/api/admin/books${qs ? `?${qs}` : ""}`);
+  },
+  getBook: (id: number) => apiClient<Envelope<AdminBook>>(`/api/admin/books/${id}`),
+  createBook: (data: { name: string; testament: "Old" | "New" }) =>
+    apiClient<Envelope<AdminBook>>("/api/admin/books", "POST", data),
+  updateBook: (id: number, data: Partial<{ name: string; testament: "Old" | "New" }>) =>
+    apiClient<{ success: boolean; message: string }>(`/api/admin/books/${id}`, "PUT", data),
+  deleteBook: (id: number) =>
+    apiClient<{ success: boolean; message: string }>(`/api/admin/books/${id}`, "DELETE"),
 
   // Languages
   listLanguages: () =>
-    apiClient<{ success: boolean; languages: AdminLanguage[] }>("/api/admin/languages"),
-  createLanguage: (data: { code: string; name: string; native_name: string; is_active?: boolean }) =>
-    apiClient<{ success: boolean; language: AdminLanguage }>("/api/admin/languages", "POST", data),
-  updateLanguage: (id: number, data: Partial<AdminLanguage>) =>
-    apiClient<{ success: boolean; language: AdminLanguage }>(`/api/admin/languages/${id}`, "PUT", data),
-  deleteLanguage: (id: number) =>
-    apiClient<{ success: boolean }>(`/api/admin/languages/${id}`, "DELETE"),
-
-  // Books
-  listBooks: (params: { search?: string; testament?: "Old" | "New" | "all"; page?: number; limit?: number } = {}) => {
-    const q = new URLSearchParams();
-    if (params.search) q.set("search", params.search);
-    if (params.testament && params.testament !== "all") q.set("testament", params.testament);
-    q.set("page", String(params.page ?? 1));
-    q.set("limit", String(params.limit ?? 20));
-    return apiClient<{ success: boolean; books: AdminBook[]; total: number }>(
-      `/api/admin/books?${q.toString()}`
-    );
-  },
-  createBook: (data: Partial<AdminBook>) =>
-    apiClient<{ success: boolean; book: AdminBook }>("/api/admin/books", "POST", data),
-  updateBook: (id: number, data: Partial<AdminBook>) =>
-    apiClient<{ success: boolean; book: AdminBook }>(`/api/admin/books/${id}`, "PUT", data),
-  deleteBook: (id: number) =>
-    apiClient<{ success: boolean }>(`/api/admin/books/${id}`, "DELETE"),
-
-  // Imports
-  importBible: (data: { language_code: string; file_path: string; batch?: boolean }) =>
-    apiClient<{ success: boolean; job_id?: string; message: string }>(
-      "/api/admin/import/bible",
-      "POST",
+    apiClient<Envelope<AdminLanguage[]>>("/api/admin/languages"),
+  createLanguage: (data: { code: string; name: string; native_name?: string }) =>
+    apiClient<Envelope<AdminLanguage>>("/api/admin/languages", "POST", data),
+  updateLanguage: (
+    id: number,
+    data: Partial<{ name: string; native_name: string; is_active: boolean }>
+  ) =>
+    apiClient<{ success: boolean; message: string }>(
+      `/api/admin/languages/${id}`,
+      "PUT",
       data
     ),
-  importQuestions: (data: { language_code: string; book_name: string; file_path: string; batch?: boolean }) =>
-    apiClient<{
+  deleteLanguage: (id: number) =>
+    apiClient<{ success: boolean; message: string }>(
+      `/api/admin/languages/${id}`,
+      "DELETE"
+    ),
+
+  // Bible import
+  getBibleImportStatus: () =>
+    apiClient<Envelope<{
+      books_imported: number;
+      verses_imported: number;
+      verse_texts_by_language: Record<string, number>;
+      languages_available: string[];
+    }>>("/api/admin/import/bible"),
+  importBible: (data: { file_path: string; language: string }) =>
+    apiClient<Envelope<{
       success: boolean;
-      job_id?: string;
       message: string;
-      preview?: { total: number; difficulty: { easy: number; medium: number; hard: number }; sample?: any };
-    }>("/api/admin/import/questions", "POST", data),
-  validateQuestionsJson: (data: { json: string }) =>
-    apiClient<{
+      book_name?: string;
+      verses_imported?: number;
+      language?: string;
+    }>>("/api/admin/import/bible", "POST", data),
+
+  // Questions import
+  getQuestionsImportStatus: () =>
+    apiClient<Envelope<{
+      total_questions: number;
+      questions_by_language: Record<string, number>;
+    }>>("/api/admin/import/questions"),
+  importQuestions: (data: { file_path: string; language: string }) =>
+    apiClient<Envelope<{
       success: boolean;
-      valid: boolean;
-      errors?: string[];
-      preview?: { total: number; difficulty: { easy: number; medium: number; hard: number }; sample?: any };
-    }>("/api/admin/import/questions/validate", "POST", data),
+      message: string;
+      questions_imported?: number;
+      language?: string;
+    }>>("/api/admin/import/questions", "POST", data),
 };

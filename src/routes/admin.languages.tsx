@@ -29,7 +29,7 @@ function LanguagesPage() {
     onError: (e: any) => toast.error(e?.message || "Failed"),
   });
 
-  const langs = q.data?.languages ?? [];
+  const langs = q.data?.data ?? [];
 
   return (
     <div className="space-y-5">
@@ -52,29 +52,27 @@ function LanguagesPage() {
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Native</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Questions</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {q.isLoading ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
             ) : q.isError ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Couldn't load languages.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Couldn't load languages.</td></tr>
             ) : langs.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No languages.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No languages.</td></tr>
             ) : langs.map((l) => (
-              <tr key={l.language_id} className="hover:bg-secondary/30">
-                <td className="px-4 py-3 text-muted-foreground">#{l.language_id}</td>
+              <tr key={l.id} className="hover:bg-secondary/30">
+                <td className="px-4 py-3 text-muted-foreground">#{l.id}</td>
                 <td className="px-4 py-3 font-mono text-xs">{l.code}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{l.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">{l.native_name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{l.native_name ?? "—"}</td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     l.is_active ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
                   }`}>{l.is_active ? "Active" : "Inactive"}</span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{l.questions_count ?? "—"}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <button onClick={() => setEditing(l)} className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary"><Pencil className="h-4 w-4" /></button>
@@ -99,7 +97,7 @@ function LanguagesPage() {
           title="Delete language?"
           message={`This will permanently delete "${confirmDel.name}".`}
           onCancel={() => setConfirmDel(null)}
-          onConfirm={() => del.mutate(confirmDel.language_id)}
+          onConfirm={() => del.mutate(confirmDel.id)}
           loading={del.isPending}
         />
       )}
@@ -108,7 +106,7 @@ function LanguagesPage() {
 }
 
 function LanguageModal({ initial, onClose, onSaved }: { initial: Partial<AdminLanguage>; onClose: () => void; onSaved: () => void }) {
-  const editing = !!initial.language_id;
+  const editing = !!initial.id;
   const [form, setForm] = useState({
     code: initial.code ?? "",
     name: initial.name ?? "",
@@ -116,9 +114,20 @@ function LanguageModal({ initial, onClose, onSaved }: { initial: Partial<AdminLa
     is_active: initial.is_active ?? true,
   });
   const m = useMutation({
-    mutationFn: () => editing
-      ? adminService.updateLanguage(initial.language_id!, form)
-      : adminService.createLanguage(form),
+    mutationFn: async () => {
+      if (editing) {
+        return adminService.updateLanguage(initial.id!, {
+          name: form.name,
+          native_name: form.native_name,
+          is_active: form.is_active,
+        });
+      }
+      return adminService.createLanguage({
+        code: form.code,
+        name: form.name,
+        native_name: form.native_name,
+      });
+    },
     onSuccess: () => { toast.success(editing ? "Updated" : "Created"); onSaved(); onClose(); },
     onError: (e: any) => toast.error(e?.message || "Failed"),
   });
@@ -130,10 +139,11 @@ function LanguageModal({ initial, onClose, onSaved }: { initial: Partial<AdminLa
           <div key={k}>
             <label className="mb-1 block text-xs font-medium capitalize text-muted-foreground">{k.replace("_", " ")}</label>
             <input
-              value={form[k]}
+              value={form[k] ?? ""}
               onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-              required
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              disabled={editing && k === "code"}
+              required={k !== "native_name"}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
             />
           </div>
         ))}
