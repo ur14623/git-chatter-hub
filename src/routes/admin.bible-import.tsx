@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Upload, FileText } from "lucide-react";
+import { Loader2, Upload, FileText, Database } from "lucide-react";
 import { toast } from "sonner";
 import { quizService } from "@/services/api";
 import { adminService } from "@/services/admin";
@@ -13,65 +13,72 @@ export const Route = createFileRoute("/admin/bible-import")({
 type LogLine = { type: "info" | "success" | "error"; msg: string; at: string };
 
 function BibleImportPage() {
+  const qc = useQueryClient();
   const langs = useQuery({ queryKey: ["quiz", "languages"], queryFn: () => quizService.getLanguages(), retry: 0 });
+  const status = useQuery({ queryKey: ["admin", "bible-status"], queryFn: () => adminService.getBibleImportStatus(), retry: 0 });
+
   const [language, setLanguage] = useState("");
-  const [method, setMethod] = useState<"file" | "folder">("file");
-  const [path, setPath] = useState("");
-  const [progress, setProgress] = useState(0);
+  const [filePath, setFilePath] = useState("");
   const [logs, setLogs] = useState<LogLine[]>([]);
-  const log = (l: LogLine) => setLogs((p) => [{ ...l, at: new Date().toLocaleTimeString() }, ...p].slice(0, 100));
+  const log = (l: Omit<LogLine, "at">) => setLogs((p) => [{ ...l, at: new Date().toLocaleTimeString() }, ...p].slice(0, 100));
 
   const m = useMutation({
-    mutationFn: () => adminService.importBible({ language_code: language, file_path: path, batch: method === "folder" }),
-    onMutate: () => { setProgress(10); log({ type: "info", msg: `Starting import from ${path}`, at: "" }); },
+    mutationFn: () => adminService.importBible({ language, file_path: filePath }),
+    onMutate: () => log({ type: "info", msg: `Importing ${filePath} (${language})` }),
     onSuccess: (r) => {
-      setProgress(100);
-      log({ type: "success", msg: r.message || "Import started", at: "" });
-      toast.success("Import requested");
+      const d = r.data;
+      log({ type: "success", msg: `${d?.message ?? "Imported"} — ${d?.book_name ?? ""} (${d?.verses_imported ?? 0} verses)` });
+      toast.success("Bible imported");
+      qc.invalidateQueries({ queryKey: ["admin", "bible-status"] });
     },
-    onError: (e: any) => { setProgress(0); log({ type: "error", msg: e?.message || "Failed", at: "" }); toast.error(e?.message || "Failed"); },
+    onError: (e: any) => { log({ type: "error", msg: e?.message || "Failed" }); toast.error(e?.message || "Failed"); },
   });
+
+  const s = status.data?.data;
 
   return (
     <div className="space-y-5">
       <div>
         <h2 className="font-serif text-2xl font-semibold text-foreground">Bible Import</h2>
-        <p className="text-sm text-muted-foreground">Upload a single file or run a batch import.</p>
+        <p className="text-sm text-muted-foreground">Import a Bible book file by language.</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Stat label="Books imported" value={s?.books_imported ?? 0} />
+        <Stat label="Verses imported" value={s?.verses_imported ?? 0} />
+        <Stat label="Languages" value={s?.languages_available?.length ?? 0} />
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Database className="h-3.5 w-3.5" />By language</div>
+          <div className="mt-1 space-y-0.5 text-xs">
+            {Object.entries(s?.verse_texts_by_language ?? {}).map(([k, v]) => (
+              <div key={k} className="flex justify-between"><span className="font-mono">{k}</span><span className="text-muted-foreground">{v}</span></div>
+            ))}
+            {!s && <span className="text-muted-foreground">—</span>}
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <form onSubmit={(e) => { e.preventDefault(); if (!language || !path) return; m.mutate(); }} className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <form onSubmit={(e) => { e.preventDefault(); if (!language || !filePath) return; m.mutate(); }} className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <Field label="Language">
             <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
               <option value="">Select language</option>
               {(langs.data?.data ?? []).map((l) => <option key={l.language_id} value={l.code}>{l.name}</option>)}
             </select>
           </Field>
-          <Field label="Import method">
-            <div className="flex gap-2">
-              {(["file", "folder"] as const).map((opt) => (
-                <button key={opt} type="button" onClick={() => setMethod(opt)} className={`flex-1 rounded-md border px-3 py-2 text-sm capitalize ${method === opt ? "border-primary bg-primary/10 text-primary" : "border-border bg-background"}`}>
-                  {opt === "file" ? "Single file" : "Folder (batch)"}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <Field label={method === "file" ? "File path" : "Folder path"}>
-            <div className="flex gap-2">
-              <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="/path/to/file.json" className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm" required />
-              <button type="button" onClick={() => toast.message("Use a server-side path the backend can read.")} className="rounded-md border border-border px-3 py-2 text-sm">Browse</button>
-            </div>
+          <Field label="File path">
+            <input
+              value={filePath}
+              onChange={(e) => setFilePath(e.target.value)}
+              placeholder="bibel_txt/new/en/genesis.txt"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              required
+            />
           </Field>
           <button type="submit" disabled={m.isPending} className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
             {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Start import
+            Import file
           </button>
-          <div>
-            <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>Progress</span><span>{progress}%</span></div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-              <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
         </form>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -106,6 +113,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 text-2xl font-semibold text-foreground">{value}</div>
     </div>
   );
 }
