@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { authService, setToken, userService, SESSION_EXPIRED_EVENT } from "@/services/api";
+import { authService, setToken, setRefreshToken, userService, SESSION_EXPIRED_EVENT } from "@/services/api";
 import { syncPendingProgress } from "@/lib/audio-progress";
 
 export type QuizResult = {
@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser(null);
       setToken(null);
+      setRefreshToken(null);
       try {
         localStorage.removeItem("bible.user");
       } catch {}
@@ -91,8 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const username = params.get("username") || params.get("display_name") || "";
     const email = params.get("email") || "";
     const isAdmin = params.get("is_admin") === "true";
+    const refreshToken = params.get("refresh_token");
 
     setToken(accessToken);
+    if (refreshToken) setRefreshToken(refreshToken);
 
     const u: User = {
       name: username || email.split("@")[0] || "User",
@@ -148,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const res = await authService.login(email, password);
     setToken(res.data.access_token);
+    if (res.data.refresh_token) setRefreshToken(res.data.refresh_token);
     const u: User = {
       name: res.data?.username || email.split("@")[0],
       email: email,
@@ -159,10 +163,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (username: string, email: string, password: string) => {
-    const res = await authService.register(email, password, username);
+    await authService.register(email, password, username);
     // Django register doesn't return a token; auto-login after registration
     const loginRes = await authService.login(email, password);
     setToken(loginRes.data.access_token);
+    if (loginRes.data.refresh_token) setRefreshToken(loginRes.data.refresh_token);
     const u: User = {
       name: loginRes.data?.username || username,
       email: email,
@@ -179,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
     setUser(null);
     setToken(null);
+    setRefreshToken(null);
     localStorage.removeItem("bible.user");
   };
 

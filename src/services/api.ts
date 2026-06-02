@@ -3,19 +3,24 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://bibel-quiz.onrender.com";
 
 const TOKEN_KEY = "bible.token";
+const REFRESH_TOKEN_KEY = "bible.refresh_token";
 
 export const getToken = (): string | null => {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 };
-
 export const setToken = (token: string | null) => {
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
+  } catch {}
+};
+export const getRefreshToken = (): string | null => {
+  try { return localStorage.getItem(REFRESH_TOKEN_KEY); } catch { return null; }
+};
+export const setRefreshToken = (token: string | null) => {
+  try {
+    if (token) localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    else localStorage.removeItem(REFRESH_TOKEN_KEY);
   } catch {}
 };
 
@@ -25,12 +30,8 @@ let sessionExpiredDispatched = false;
 function notifySessionExpired() {
   if (sessionExpiredDispatched) return;
   sessionExpiredDispatched = true;
-  setTimeout(() => {
-    sessionExpiredDispatched = false;
-  }, 5000);
-  try {
-    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
-  } catch {}
+  setTimeout(() => { sessionExpiredDispatched = false; }, 5000);
+  try { window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT)); } catch {}
 }
 
 export class ApiError extends Error {
@@ -43,11 +44,65 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Format any thrown value into a user-friendly message by walking
+ * `message` / `detail` / `errors` (field map) from the API envelope.
+ */
+export function formatApiError(e: unknown, fallback = "Request failed"): string {
+  if (!e) return fallback;
+  const raw: any = e instanceof ApiError ? e.data : (e as any)?.data ?? e;
+  if (raw && typeof raw === "object" && raw.errors && typeof raw.errors === "object") {
+    const parts: string[] = [];
+    for (const [field, val] of Object.entries(raw.errors)) {
+      const msg = Array.isArray(val) ? val.join(", ") : String(val);
+      parts.push(`${field}: ${msg}`);
+    }
+    if (parts.length) return parts.join(" • ");
+  }
+  const direct =
+    (raw && typeof raw === "object" && (raw.message || raw.detail || raw.error)) ||
+    (e instanceof Error ? e.message : null);
+  return direct || fallback;
+}
+
+// ───────────────────── Silent token refresh ─────────────────────
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function tryRefreshToken(): Promise<string | null> {
+  const refresh = getRefreshToken();
+  if (!refresh) return null;
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      const data: any = await res.json().catch(() => null);
+      if (!res.ok) return null;
+      const newAccess: string | undefined =
+        data?.data?.access_token ?? data?.access_token;
+      const newRefresh: string | undefined =
+        data?.data?.refresh_token ?? data?.refresh_token;
+      if (newAccess) setToken(newAccess);
+      if (newRefresh) setRefreshToken(newRefresh);
+      return newAccess ?? null;
+    } catch {
+      return null;
+    } finally {
+      setTimeout(() => { refreshInFlight = null; }, 0);
+    }
+  })();
+  return refreshInFlight;
+}
+
 export async function apiClient<T>(
   url: string,
   method: string = "GET",
   body: unknown = null,
-  token: string | null = null
+  token: string | null = null,
+  _retry = false,
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const authToken = token ?? getToken();
@@ -61,19 +116,30 @@ export async function apiClient<T>(
 
   const data = await response.json().catch(() => null);
 
-  // Auth expired: tell the app so it can log the user out and notify them.
+  // 401 → try to silently refresh once, then retry the original call.
+  if (
+    response.status === 401 &&
+    !_retry &&
+    !url.includes("/api/auth/refresh") &&
+    !url.includes("/api/auth/login") &&
+    getRefreshToken()
+  ) {
+    const newToken = await tryRefreshToken();
+    if (newToken) {
+      return apiClient<T>(url, method, body, newToken, true);
+    }
+  }
+
   if (response.status === 401 && getToken()) {
     notifySessionExpired();
   }
 
-  // Some endpoints (e.g. /api/auth/login) return HTTP 200 but with an
-  // error envelope: `[{status:"error", message, data}, <httpCode>]`.
-  // Detect and surface as ApiError so callers don't treat it as success.
+  // 200-with-error-envelope shape: `[{status:"error", message}, code]`.
   if (Array.isArray(data) && data.length === 2 && typeof data[1] === "number") {
-    const [body, code] = data as [any, number];
-    if (code >= 400 || body?.status === "error") {
-      const message = body?.message || body?.error || `HTTP ${code}`;
-      throw new ApiError(message, code, body);
+    const [b, code] = data as [any, number];
+    if (code >= 400 || b?.status === "error") {
+      const message = b?.message || b?.error || `HTTP ${code}`;
+      throw new ApiError(message, code, b);
     }
   }
 
@@ -82,14 +148,8 @@ export async function apiClient<T>(
     (data as any)?.status === "error" ||
     (data as any)?.success === false
   ) {
-    const raw = data as any;
-    let message = raw?.message || raw?.error || raw?.detail;
-    // Django validation errors: { errors: { field: ["msg"] } }
-    if (!message && raw?.errors) {
-      const firstField = Object.values(raw.errors)[0] as any;
-      message = Array.isArray(firstField) ? firstField[0] : String(firstField);
-    }
-    throw new ApiError(message || `HTTP ${response.status}`, response.status, data);
+    const message = formatApiError(data, `HTTP ${response.status}`);
+    throw new ApiError(message, response.status, data);
   }
   return data as T;
 }
@@ -99,10 +159,13 @@ export type DjangoLoginRes = {
   status: "success";
   data: {
     access_token: string;
-    token_type: string;
-    expires_at: string;
+    refresh_token?: string;
+    session_token?: string;
+    token_type?: string;
+    expires_at?: string;
     user_id: number;
     username: string;
+    email?: string;
     is_admin: boolean;
   };
 };

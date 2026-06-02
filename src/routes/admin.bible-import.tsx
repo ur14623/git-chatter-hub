@@ -5,6 +5,7 @@ import { Loader2, Upload, FileText, Database } from "lucide-react";
 import { toast } from "sonner";
 import { quizService } from "@/services/api";
 import { adminService } from "@/services/admin";
+import { SkeletonBlock, toastApiError } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/admin/bible-import")({
   component: BibleImportPage,
@@ -31,7 +32,7 @@ function BibleImportPage() {
       toast.success("Bible imported");
       qc.invalidateQueries({ queryKey: ["admin", "bible-status"] });
     },
-    onError: (e: any) => { log({ type: "error", msg: e?.message || "Failed" }); toast.error(e?.message || "Failed"); },
+    onError: (e) => { log({ type: "error", msg: (e as any)?.message || "Failed" }); toastApiError(e, "Bible import failed"); },
   });
 
   const s = status.data?.data;
@@ -44,40 +45,53 @@ function BibleImportPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Books imported" value={s?.books_imported ?? 0} />
-        <Stat label="Verses imported" value={s?.verses_imported ?? 0} />
-        <Stat label="Languages" value={s?.languages_available?.length ?? 0} />
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Database className="h-3.5 w-3.5" />By language</div>
-          <div className="mt-1 space-y-0.5 text-xs">
-            {Object.entries(s?.verse_texts_by_language ?? {}).map(([k, v]) => (
-              <div key={k} className="flex justify-between"><span className="font-mono">{k}</span><span className="text-muted-foreground">{v}</span></div>
-            ))}
-            {!s && <span className="text-muted-foreground">—</span>}
-          </div>
-        </div>
+        {status.isLoading ? (
+          <>
+            <SkeletonBlock className="h-20 w-full" />
+            <SkeletonBlock className="h-20 w-full" />
+            <SkeletonBlock className="h-20 w-full" />
+            <SkeletonBlock className="h-20 w-full" />
+          </>
+        ) : (
+          <>
+            <Stat label="Books imported" value={s?.books_imported ?? 0} />
+            <Stat label="Verses imported" value={s?.verses_imported ?? 0} />
+            <Stat label="Languages" value={s?.languages_available?.length ?? 0} />
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Database className="h-3.5 w-3.5" />By language</div>
+              <div className="mt-1 space-y-0.5 text-xs">
+                {Object.entries(s?.verse_texts_by_language ?? {}).map(([k, v]) => (
+                  <div key={k} className="flex justify-between"><span className="font-mono">{k}</span><span className="text-muted-foreground">{v}</span></div>
+                ))}
+                {!s && <span className="text-muted-foreground">—</span>}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <form onSubmit={(e) => { e.preventDefault(); if (!language || !filePath) return; m.mutate(); }} className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <Field label="Language">
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
-              <option value="">Select language</option>
-              {(langs.data?.data ?? []).map((l) => <option key={l.language_id} value={l.code}>{l.name}</option>)}
-            </select>
-          </Field>
-          <Field label="File path">
-            <input
-              value={filePath}
-              onChange={(e) => setFilePath(e.target.value)}
-              placeholder="bibel_txt/new/en/genesis.txt"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              required
-            />
-          </Field>
+          <fieldset disabled={m.isPending} className="space-y-4">
+            <Field label="Language">
+              <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
+                <option value="">Select language</option>
+                {(langs.data?.data ?? []).map((l) => <option key={l.language_id} value={l.code}>{l.name}</option>)}
+              </select>
+            </Field>
+            <Field label="File path">
+              <input
+                value={filePath}
+                onChange={(e) => setFilePath(e.target.value)}
+                placeholder="bibel_txt/new/en/genesis.txt"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              />
+            </Field>
+          </fieldset>
           <button type="submit" disabled={m.isPending} className="flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
             {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Import file
+            {m.isPending ? "Importing…" : "Import file"}
           </button>
         </form>
 

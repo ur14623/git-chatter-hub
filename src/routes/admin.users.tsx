@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Loader2, Search, Download, Eye, Power, Shield, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 import { adminService, type AdminUser } from "@/services/admin";
+import { SkeletonRows, toastApiError } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/admin/users")({
   component: UsersPage,
@@ -43,13 +44,13 @@ function UsersPage() {
   const toggleActive = useMutation({
     mutationFn: (u: AdminUser) => adminService.setUserActive(u.id, !u.is_active),
     onSuccess: () => { toast.success("User updated"); qc.invalidateQueries({ queryKey: ["admin", "users"] }); },
-    onError: (e: any) => toast.error(e?.message || "Failed to update"),
+    onError: (e) => toastApiError(e, "Failed to update user"),
   });
 
   const toggleAdmin = useMutation({
     mutationFn: (u: AdminUser) => adminService.setUserAdmin(u.id, !u.is_admin),
     onSuccess: () => { toast.success("Admin status updated"); qc.invalidateQueries({ queryKey: ["admin", "users"] }); },
-    onError: (e: any) => toast.error(e?.message || "Failed to update"),
+    onError: (e) => toastApiError(e, "Failed to update admin status"),
   });
 
   const exportCsv = () => {
@@ -120,38 +121,55 @@ function UsersPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {q.isLoading ? (
-              <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+              <SkeletonRows cols={8} rows={6} />
             ) : q.isError ? (
-              <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Couldn't load users.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">{(q.error as any)?.message || "Couldn't load users."}</td></tr>
             ) : users.length === 0 ? (
               <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">No users found.</td></tr>
             ) : (
-              users.map((u) => (
-                <tr key={u.id} className="hover:bg-secondary/30">
-                  <td className="px-4 py-3 text-muted-foreground">#{u.id}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{u.total_quizzes_taken ?? 0}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${u.is_admin ? "bg-purple-100 text-purple-700" : "bg-muted text-muted-foreground"}`}>
-                      {u.is_admin ? "Admin" : "User"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge active={u.is_active} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setViewing(u)} className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary" aria-label="View"><Eye className="h-4 w-4" /></button>
-                      <button onClick={() => toggleAdmin.mutate(u)} className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary" aria-label="Toggle admin" title={u.is_admin ? "Demote" : "Promote to admin"}>
-                        {u.is_admin ? <ShieldOff className="h-4 w-4 text-purple-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
-                      </button>
-                      <button onClick={() => toggleActive.mutate(u)} className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary" aria-label="Toggle active"><Power className={`h-4 w-4 ${u.is_active ? "text-emerald-600" : "text-muted-foreground"}`} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              users.map((u) => {
+                const togglingActive = toggleActive.isPending && toggleActive.variables?.id === u.id;
+                const togglingAdmin = toggleAdmin.isPending && toggleAdmin.variables?.id === u.id;
+                return (
+                  <tr key={u.id} className="hover:bg-secondary/30">
+                    <td className="px-4 py-3 text-muted-foreground">#{u.id}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{u.total_quizzes_taken ?? 0}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${u.is_admin ? "bg-purple-100 text-purple-700" : "bg-muted text-muted-foreground"}`}>
+                        {u.is_admin ? "Admin" : "User"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge active={u.is_active} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => setViewing(u)} className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary" aria-label="View"><Eye className="h-4 w-4" /></button>
+                        <button
+                          onClick={() => toggleAdmin.mutate(u)}
+                          disabled={togglingAdmin}
+                          className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary disabled:opacity-50"
+                          aria-label="Toggle admin"
+                          title={u.is_admin ? "Demote" : "Promote to admin"}
+                        >
+                          {togglingAdmin ? <Loader2 className="h-4 w-4 animate-spin" /> : u.is_admin ? <ShieldOff className="h-4 w-4 text-purple-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
+                        </button>
+                        <button
+                          onClick={() => toggleActive.mutate(u)}
+                          disabled={togglingActive}
+                          className="grid h-8 w-8 place-items-center rounded-md hover:bg-secondary disabled:opacity-50"
+                          aria-label="Toggle active"
+                        >
+                          {togglingActive ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className={`h-4 w-4 ${u.is_active ? "text-emerald-600" : "text-muted-foreground"}`} />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

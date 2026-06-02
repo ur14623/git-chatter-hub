@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminService, type AdminLanguage } from "@/services/admin";
+import { SkeletonRows, toastApiError } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/admin/languages")({
   component: LanguagesPage,
@@ -26,7 +27,7 @@ function LanguagesPage() {
       qc.invalidateQueries({ queryKey: ["admin", "languages"] });
       setConfirmDel(null);
     },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
+    onError: (e) => toastApiError(e, "Failed to delete language"),
   });
 
   const langs = q.data?.data ?? [];
@@ -57,9 +58,9 @@ function LanguagesPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {q.isLoading ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+              <SkeletonRows cols={6} rows={5} />
             ) : q.isError ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Couldn't load languages.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">{(q.error as any)?.message || "Couldn't load languages."}</td></tr>
             ) : langs.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No languages.</td></tr>
             ) : langs.map((l) => (
@@ -129,30 +130,32 @@ function LanguageModal({ initial, onClose, onSaved }: { initial: Partial<AdminLa
       });
     },
     onSuccess: () => { toast.success(editing ? "Updated" : "Created"); onSaved(); onClose(); },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
+    onError: (e) => toastApiError(e, "Failed to save language"),
   });
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
       <form onSubmit={(e) => { e.preventDefault(); m.mutate(); }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl border border-border bg-card p-6 shadow-xl">
         <h3 className="font-serif text-lg font-semibold">{editing ? "Edit" : "Add"} language</h3>
-        {(["code", "name", "native_name"] as const).map((k) => (
-          <div key={k}>
-            <label className="mb-1 block text-xs font-medium capitalize text-muted-foreground">{k.replace("_", " ")}</label>
-            <input
-              value={form[k] ?? ""}
-              onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-              disabled={editing && k === "code"}
-              required={k !== "native_name"}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
-            />
-          </div>
-        ))}
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-          Active
-        </label>
+        <fieldset disabled={m.isPending} className="space-y-3">
+          {(["code", "name", "native_name"] as const).map((k) => (
+            <div key={k}>
+              <label className="mb-1 block text-xs font-medium capitalize text-muted-foreground">{k.replace("_", " ")}</label>
+              <input
+                value={form[k] ?? ""}
+                onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                disabled={editing && k === "code"}
+                required={k !== "native_name"}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
+          ))}
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
+            Active
+          </label>
+        </fieldset>
         <div className="flex gap-2 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 rounded-md border border-border py-2 text-sm">Cancel</button>
+          <button type="button" onClick={onClose} disabled={m.isPending} className="flex-1 rounded-md border border-border py-2 text-sm disabled:opacity-60">Cancel</button>
           <button disabled={m.isPending} type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
             {m.isPending && <Loader2 className="h-4 w-4 animate-spin" />}Save
           </button>
