@@ -118,7 +118,7 @@ function BookModal({ initial, onClose, onSaved }: { initial: Partial<AdminBook>;
       return adminService.createBook(form);
     },
     onSuccess: () => { toast.success(editing ? "Updated" : "Created"); onSaved(); onClose(); },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
+    onError: (e) => toastApiError(e, "Failed to save book"),
   });
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
