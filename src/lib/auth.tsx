@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { authService, setToken, userService, SESSION_EXPIRED_EVENT } from "@/services/api";
+import { authService, setToken, setRefreshToken, userService, SESSION_EXPIRED_EVENT } from "@/services/api";
 import { syncPendingProgress } from "@/lib/audio-progress";
 
 export type QuizResult = {
