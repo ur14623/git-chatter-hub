@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { adminService, type AdminLanguage } from "@/services/admin";
+import { SkeletonRows, toastApiError } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/admin/languages")({
   component: LanguagesPage,
