@@ -44,7 +44,7 @@ function QuestionsImportPage() {
       toast.success("Questions imported");
       qc.invalidateQueries({ queryKey: ["admin", "questions-status"] });
     },
-    onError: (e: any) => { log({ type: "error", msg: e?.message || "Failed" }); toast.error(e?.message || "Failed"); },
+    onError: (e) => { log({ type: "error", msg: (e as any)?.message || "Failed" }); toastApiError(e, "Questions import failed"); },
   });
 
   const s = status.data?.data;
