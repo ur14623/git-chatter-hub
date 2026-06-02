@@ -92,8 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const username = params.get("username") || params.get("display_name") || "";
     const email = params.get("email") || "";
     const isAdmin = params.get("is_admin") === "true";
+    const refreshToken = params.get("refresh_token");
 
     setToken(accessToken);
+    if (refreshToken) setRefreshToken(refreshToken);
 
     const u: User = {
       name: username || email.split("@")[0] || "User",
