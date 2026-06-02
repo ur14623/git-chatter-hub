@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser(null);
       setToken(null);
+      setRefreshToken(null);
       try {
         localStorage.removeItem("bible.user");
       } catch {}
