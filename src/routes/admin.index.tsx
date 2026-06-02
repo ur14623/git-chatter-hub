@@ -41,7 +41,11 @@ function AdminDashboard() {
                 <Icon className={`h-5 w-5 ${c.color}`} />
               </div>
               <div className="mt-3 text-3xl font-semibold text-foreground">
-                {loading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> : (c.value ?? 0)}
+                {loading ? (
+                  <div className="h-8 w-16 animate-pulse rounded bg-muted/70" />
+                ) : (
+                  c.value ?? 0
+                )}
               </div>
             </Link>
           );
