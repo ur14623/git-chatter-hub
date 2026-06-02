@@ -44,13 +44,13 @@ function UsersPage() {
   const toggleActive = useMutation({
     mutationFn: (u: AdminUser) => adminService.setUserActive(u.id, !u.is_active),
     onSuccess: () => { toast.success("User updated"); qc.invalidateQueries({ queryKey: ["admin", "users"] }); },
-    onError: (e: any) => toast.error(e?.message || "Failed to update"),
+    onError: (e) => toastApiError(e, "Failed to update user"),
   });
 
   const toggleAdmin = useMutation({
     mutationFn: (u: AdminUser) => adminService.setUserAdmin(u.id, !u.is_admin),
     onSuccess: () => { toast.success("Admin status updated"); qc.invalidateQueries({ queryKey: ["admin", "users"] }); },
-    onError: (e: any) => toast.error(e?.message || "Failed to update"),
+    onError: (e) => toastApiError(e, "Failed to update admin status"),
   });
 
   const exportCsv = () => {
