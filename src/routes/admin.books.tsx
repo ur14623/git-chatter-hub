@@ -124,19 +124,21 @@ function BookModal({ initial, onClose, onSaved }: { initial: Partial<AdminBook>;
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
       <form onSubmit={(e) => { e.preventDefault(); m.mutate(); }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-3 rounded-2xl border border-border bg-card p-6 shadow-xl">
         <h3 className="font-serif text-lg font-semibold">{editing ? "Edit" : "Add"} book</h3>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Name</label>
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Testament</label>
-          <select value={form.testament} onChange={(e) => setForm({ ...form, testament: e.target.value as any })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-            <option value="Old">Old</option>
-            <option value="New">New</option>
-          </select>
-        </div>
+        <fieldset disabled={m.isPending} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Name</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Testament</label>
+            <select value={form.testament} onChange={(e) => setForm({ ...form, testament: e.target.value as any })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <option value="Old">Old</option>
+              <option value="New">New</option>
+            </select>
+          </div>
+        </fieldset>
         <div className="flex gap-2 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 rounded-md border border-border py-2 text-sm">Cancel</button>
+          <button type="button" onClick={onClose} disabled={m.isPending} className="flex-1 rounded-md border border-border py-2 text-sm disabled:opacity-60">Cancel</button>
           <button disabled={m.isPending} type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground disabled:opacity-60">
             {m.isPending && <Loader2 className="h-4 w-4 animate-spin" />}Save
           </button>
