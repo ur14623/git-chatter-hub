@@ -76,9 +76,9 @@ function BooksPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {q.isLoading ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+              <SkeletonRows cols={6} rows={6} />
             ) : q.isError ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Couldn't load books.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">{(q.error as any)?.message || "Couldn't load books."}</td></tr>
             ) : books.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No books.</td></tr>
             ) : books.map((b) => (
