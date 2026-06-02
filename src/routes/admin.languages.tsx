@@ -58,9 +58,9 @@ function LanguagesPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {q.isLoading ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+              <SkeletonRows cols={6} rows={5} />
             ) : q.isError ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Couldn't load languages.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">{(q.error as any)?.message || "Couldn't load languages."}</td></tr>
             ) : langs.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No languages.</td></tr>
             ) : langs.map((l) => (
