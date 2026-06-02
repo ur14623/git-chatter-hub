@@ -159,10 +159,13 @@ export type DjangoLoginRes = {
   status: "success";
   data: {
     access_token: string;
-    token_type: string;
-    expires_at: string;
+    refresh_token?: string;
+    session_token?: string;
+    token_type?: string;
+    expires_at?: string;
     user_id: number;
     username: string;
+    email?: string;
     is_admin: boolean;
   };
 };
