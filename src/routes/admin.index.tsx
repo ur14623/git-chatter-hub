@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Globe, BookOpen, FileQuestion, Loader2, Trophy, CheckCircle2 } from "lucide-react";
+import { Users, Globe, BookOpen, FileQuestion, Trophy, CheckCircle2 } from "lucide-react";
 import { adminService } from "@/services/admin";
 
 export const Route = createFileRoute("/admin/")({
