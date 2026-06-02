@@ -27,7 +27,7 @@ function LanguagesPage() {
       qc.invalidateQueries({ queryKey: ["admin", "languages"] });
       setConfirmDel(null);
     },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
+    onError: (e) => toastApiError(e, "Failed to delete language"),
   });
 
   const langs = q.data?.data ?? [];
