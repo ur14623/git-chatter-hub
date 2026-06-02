@@ -32,7 +32,7 @@ function BibleImportPage() {
       toast.success("Bible imported");
       qc.invalidateQueries({ queryKey: ["admin", "bible-status"] });
     },
-    onError: (e: any) => { log({ type: "error", msg: e?.message || "Failed" }); toast.error(e?.message || "Failed"); },
+    onError: (e) => { log({ type: "error", msg: (e as any)?.message || "Failed" }); toastApiError(e, "Bible import failed"); },
   });
 
   const s = status.data?.data;
