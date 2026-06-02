@@ -33,7 +33,7 @@ function BooksPage() {
   const del = useMutation({
     mutationFn: (id: number) => adminService.deleteBook(id),
     onSuccess: () => { toast.success("Book deleted"); qc.invalidateQueries({ queryKey: ["admin", "books"] }); setConfirmDel(null); },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
+    onError: (e) => toastApiError(e, "Failed to delete book"),
   });
 
   return (
