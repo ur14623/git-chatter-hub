@@ -77,9 +77,13 @@ export async function apiClient<T>(
     }
   }
 
-  if (!response.ok || (data as any)?.status === "error") {
+  if (
+    !response.ok ||
+    (data as any)?.status === "error" ||
+    (data as any)?.success === false
+  ) {
     const raw = data as any;
-    let message = raw?.message || raw?.error;
+    let message = raw?.message || raw?.error || raw?.detail;
     // Django validation errors: { errors: { field: ["msg"] } }
     if (!message && raw?.errors) {
       const firstField = Object.values(raw.errors)[0] as any;

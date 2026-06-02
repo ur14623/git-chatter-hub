@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   LayoutDashboard, Users, Globe, BookOpen, BookText, FileQuestion,
   LogOut, Bell, Settings as SettingsIcon, User as UserIcon,
@@ -24,8 +25,15 @@ function AdminLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
+  // Gate: only admins may access /admin/*
+  useEffect(() => {
+    if (user === null) navigate({ to: "/login", search: { redirect: pathname } as any });
+    else if (user.role !== "admin") navigate({ to: "/" });
+  }, [user, navigate, pathname]);
+
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
+
 
   return (
     <div className="flex min-h-screen bg-secondary/40">
