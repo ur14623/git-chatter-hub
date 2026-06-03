@@ -127,6 +127,7 @@ function LanguageModal({ initial, onClose, onSaved }: { initial: Partial<AdminLa
         code: form.code,
         name: form.name,
         native_name: form.native_name,
+        is_active: form.is_active,
       });
     },
     onSuccess: () => { toast.success(editing ? "Updated" : "Created"); onSaved(); onClose(); },
