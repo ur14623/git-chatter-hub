@@ -112,7 +112,7 @@ export const adminService = {
   // Languages
   listLanguages: () =>
     apiClient<Envelope<AdminLanguage[]>>("/api/admin/languages"),
-  createLanguage: (data: { code: string; name: string; native_name?: string }) =>
+  createLanguage: (data: { code: string; name: string; native_name?: string; is_active?: boolean }) =>
     apiClient<Envelope<AdminLanguage>>("/api/admin/languages", "POST", data),
   updateLanguage: (
     id: number,
